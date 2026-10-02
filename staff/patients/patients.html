@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patients | DentaNueva Dental Clinic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../profile/profile.css" />
+    <link rel="stylesheet" href="../../navigation_bar/sidebar.css" />
+    <link rel="stylesheet" href="patients.css" />
+  </head>
+  <body>
+    <div class="patients-layout">
+      <aside id="sidebar-container"></aside>
+      <main class="patients-main">
+        <div class="patients-content">
+          <section class="patient-page-header">
+            <div class="patient-page-title">
+              <h1>Patients</h1>
+              <p>
+                Manage patient information and keep track of their clinic
+                records.
+              </p>
+            </div>
+            <button type="button" class="btn-add-patient" id="addPatientBtn">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>Add Patient</span>
+            </button>
+          </section>
+          <section class="patient-list-card">
+            <div class="patient-card-header">
+              <div class="patient-card-title"></div>
+              <div class="patient-card-header-right">
+                <div class="patient-search">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input
+                    type="search"
+                    id="patientSearch"
+                    name="patientSearch"
+                    autocomplete="off"
+                    placeholder="Search patient..."
+                  />
+                </div>
+                <span
+                  class="patient-count-label"
+                  id="patientCount"
+                  aria-live="polite"
+                  >0 patients</span
+                >
+                <select
+                  id="sortPatients"
+                  name="sortPatients"
+                  class="patient-select sort-select"
+                >
+                  <option value="nameAsc">Name A-Z</option>
+                  <option value="nameDesc">Name Z-A</option>
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="withSchedule">Scheduled</option>
+                </select>
+              </div>
+            </div>
+            <div class="patient-table-wrapper">
+              <table class="patient-table">
+                <thead>
+                  <tr>
+                    <th class="patient-column">PATIENT</th>
+                    <th class="contact-column">CONTACT</th>
+                    <th class="age-column">AGE / GENDER</th>
+                    <th class="appointment-column">NEXT APPOINTMENT</th>
+                    <th class="medical-form-column">MEDICAL FORM</th>
+                    <th class="action-column">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="patientTableBody"></tbody>
+              </table>
+              <div class="patient-empty-state" id="patientEmptyState" hidden>
+                <div class="empty-icon">
+                  <i class="fa-solid fa-user-group"></i>
+                </div>
+                <h3>No patients found</h3>
+                <p>Try changing your search or add a new patient.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+        <section class="patient-record-page" id="patientRecordPage" hidden>
+          <div class="patient-record-header">
+            <div class="patient-record-header-left">
+              <button
+                type="button"
+                class="patient-record-back-btn"
+                id="backToPatientsBtn"
+                aria-label="Back to Patients"
+              >
+                <i class="fa-solid fa-arrow-left"></i>
+              </button>
+              <div class="patient-record-heading">
+                <h1 id="patientPageTitle">Patient Record</h1>
+                <p id="patientPageSubtitle">Patient clinical information</p>
+              </div>
+            </div>
+          </div>
+          <div class="patient-record-tabs" role="tablist">
+            <button
+              type="button"
+              class="patient-record-tab active"
+              data-patient-page-tab="overview"
+              role="tab"
+              aria-selected="true"
+            >
+              <i class="fa-regular fa-folder-open"></i>
+              <span>Overview</span>
+            </button>
+            <button
+              type="button"
+              class="patient-record-tab"
+              data-patient-page-tab="medical"
+              role="tab"
+              aria-selected="false"
+            >
+              <i class="fa-solid fa-notes-medical"></i>
+              <span>Medical Record</span>
+            </button>
+            <button
+              type="button"
+              class="patient-record-tab"
+              data-patient-page-tab="dental"
+              role="tab"
+              aria-selected="false"
+            >
+              <i class="fa-solid fa-tooth"></i>
+              <span>Dental Chart</span>
+            </button>
+            <button
+              type="button"
+              class="patient-record-tab"
+              data-patient-page-tab="images"
+              role="tab"
+              aria-selected="false"
+            >
+              <i class="fa-regular fa-images"></i>
+              <span>Clinical Images</span>
+            </button>
+            <button
+              type="button"
+              class="patient-record-tab"
+              data-patient-page-tab="treatments"
+              role="tab"
+              aria-selected="false"
+            >
+              <i class="fa-solid fa-tooth"></i>
+              <span>Treatments</span>
+            </button>
+            <button
+              type="button"
+              class="patient-record-tab"
+              data-patient-page-tab="appointments"
+              role="tab"
+              aria-selected="false"
+            >
+              <i class="fa-regular fa-calendar-check"></i>
+              <span>Appointments</span>
+            </button>
+          </div>
+          <div class="patient-record-panels">
+            <section
+              class="patient-record-panel active"
+              id="patientPageOverview"
+              data-patient-page-panel="overview"
+            ></section>
+            <section
+              class="patient-record-panel"
+              id="patientPageMedical"
+              data-patient-page-panel="medical"
+              hidden
+            ></section>
+            <section
+              class="patient-record-panel"
+              id="patientPageDental"
+              data-patient-page-panel="dental"
+              hidden
+            ></section>
+            <section
+              class="patient-record-panel"
+              id="patientPageImages"
+              data-patient-page-panel="images"
+              hidden
+            ></section>
+            <section
+              class="patient-record-panel"
+              id="patientPageTreatments"
+              data-patient-page-panel="treatments"
+              hidden
+            ></section>
+            <section
+              class="patient-record-panel"
+              id="patientPageAppointments"
+              data-patient-page-panel="appointments"
+              hidden
+            ></section>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div
+      class="patient-modal-backdrop"
+      id="patientModalBackdrop"
+      aria-hidden="true"
+    >
+      <div
+        class="patient-modal patient-profile-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="patientModalTitle"
+      >
+        <div class="patient-modal-header">
+          <div>
+            <span class="modal-eyebrow">PATIENT RECORD</span>
+            <h2 id="patientModalTitle">Add Patient</h2>
+          </div>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="closePatientModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="patientForm" autocomplete="off">
+          <input type="hidden" id="patientId" name="patientId" />
+          <div class="profile-form-body">
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="firstName">First Name</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  autocomplete="given-name"
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label for="lastName">Last Name</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  autocomplete="family-name"
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label for="dateOfBirth">Date of Birth</label>
+                <input
+                  type="date"
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label for="patientGender">Gender</label>
+                <select id="patientGender" name="patientGender" required>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="phone">Phone Number</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  autocomplete="tel"
+                  placeholder="09XXXXXXXXX"
+                  inputmode="numeric"
+                  maxlength="11"
+                  minlength="11"
+                  pattern="09[0-9]{9}"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label for="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  autocomplete="email"
+                  placeholder="patient@example.com"
+                />
+              </div>
+              <div class="form-field form-field-full">
+                <label for="address">Address</label>
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  autocomplete="street-address"
+                  placeholder="Enter complete address"
+                />
+              </div>
+              <div class="form-field">
+                <label for="emergencyName">Emergency Contact Name</label>
+                <input
+                  type="text"
+                  id="emergencyName"
+                  name="emergencyName"
+                  placeholder="Full name"
+                />
+              </div>
+              <div class="form-field">
+                <label for="emergencyContact">Emergency Contact No.</label>
+                <input
+                  type="tel"
+                  id="emergencyContact"
+                  name="emergencyContact"
+                  placeholder="09XXXXXXXXX"
+                />
+              </div>
+            </div>
+            <p class="form-hint">
+              Patient profile information is stored once and shared with the
+              patient's Medical &amp; Dental History and appointment records.
+            </p>
+          </div>
+          <div class="patient-modal-actions">
+            <button
+              type="button"
+              class="btn-modal-secondary"
+              id="cancelPatientBtn"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn-modal-primary">
+              Save Patient
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      class="patient-modal-backdrop"
+      id="medicalFormModalBackdrop"
+      aria-hidden="true"
+    >
+      <div
+        class="patient-modal medform-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="medicalFormModalTitle"
+      >
+        <div class="patient-modal-header">
+          <div>
+            <span class="modal-eyebrow">MEDICAL &amp; DENTAL HISTORY</span>
+            <h2 id="medicalFormModalTitle">Fill Out Medical Form</h2>
+            <p class="medical-last-updated" id="medicalLastUpdated" hidden></p>
+          </div>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="closeMedicalFormModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="medform-progress" id="medformProgress">
+          <div class="medform-progress-track">
+            <div class="medform-progress-fill" id="medformProgressFill"></div>
+          </div>
+          <div class="medform-progress-steps" id="medformProgressSteps">
+            <span class="medform-progress-step active" data-step="1">
+              <i class="fa-solid fa-user"></i>
+              <em>Patient</em>
+            </span>
+            <span class="medform-progress-step" data-step="2">
+              <i class="fa-solid fa-tooth"></i>
+              <em>Dental Concern</em>
+            </span>
+            <span class="medform-progress-step" data-step="3">
+              <i class="fa-solid fa-notes-medical"></i>
+              <em>Dental History</em>
+            </span>
+            <span class="medform-progress-step" data-step="4">
+              <i class="fa-solid fa-briefcase-medical"></i>
+              <em>Medical &amp; Allergies</em>
+            </span>
+            <span class="medform-progress-step" data-step="5">
+              <i class="fa-solid fa-signature"></i>
+              <em>Consent</em>
+            </span>
+          </div>
+        </div>
+        <form id="medicalForm" autocomplete="off">
+          <input type="hidden" id="medFormPatientId" name="medFormPatientId" />
+          <div class="medform-step-viewport" id="medformStepViewport">
+            <div class="medform-step active" data-step="1">
+              <section class="medform-section">
+                <div class="medform-section-heading">
+                  <div>
+                    <h3>Patient Information</h3>
+                    <p>
+                      This information comes from the patient's profile. To
+                      change it, use <strong>Edit Patient</strong>.
+                    </p>
+                  </div>
+                  <span class="readonly-badge">
+                    <i class="fa-solid fa-lock"></i>
+                    Profile Information
+                  </span>
+                </div>
+                <div class="medform-grid medform-grid-2">
+                  <div class="form-field">
+                    <label>Patient</label>
+                    <input type="text" id="medPatientName" readonly />
+                  </div>
+                  <div class="form-field">
+                    <label>Patient ID</label>
+                    <input type="text" id="medPatientIdDisplay" readonly />
+                  </div>
+                  <div class="form-field">
+                    <label>Date of Birth</label>
+                    <input type="text" id="medDateOfBirth" readonly />
+                  </div>
+                  <div class="form-field">
+                    <label>Age</label>
+                    <input type="text" id="medAge" readonly />
+                  </div>
+                  <div class="form-field">
+                    <label>Gender</label>
+                    <input type="text" id="medGender" readonly />
+                  </div>
+                  <div class="form-field">
+                    <label>Contact No.</label>
+                    <input type="text" id="medContact" readonly />
+                  </div>
+                  <div class="form-field form-field-full">
+                    <label>Address</label>
+                    <input type="text" id="medAddress" readonly />
+                  </div>
+                  <div class="form-field">
+                    <label>Emergency Contact Name</label>
+                    <input type="text" id="medEmergencyName" readonly />
+                  </div>
+                  <div class="form-field">
+                    <label>Emergency Contact No.</label>
+                    <input type="text" id="medEmergencyContact" readonly />
+                  </div>
+                </div>
+                <div class="medform-profile-note">
+                  <i class="fa-solid fa-circle-info"></i>
+                  <span
+                    >These details are managed from the patient's profile. Use
+                    <strong>Edit Patient</strong> from the Actions menu to
+                    update them.</span
+                  >
+                </div>
+              </section>
+            </div>
+            <div class="medform-step" data-step="2">
+              <section class="medform-section">
+                <h3>Dental Concern</h3>
+                <p class="medform-subtext">
+                  Please check the reason for the visit:
+                </p>
+                <div class="medform-checkbox-grid">
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Toothache"
+                    />
+                    Toothache
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Dentures"
+                    />
+                    Dentures
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Cleaning"
+                    />
+                    Cleaning
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Whitening"
+                    />
+                    Whitening
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Filling"
+                    />
+                    Filling
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Tooth Extraction"
+                    />
+                    Tooth Extraction
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Braces Consultation"
+                    />
+                    Braces Consultation
+                  </label>
+                  <label class="medform-checkbox medform-checkbox-other">
+                    <input type="checkbox" id="dentalConcernOtherCheck" />
+                    <span>Others:</span>
+                    <input
+                      type="text"
+                      id="dentalConcernOther"
+                      class="medform-inline-input"
+                      placeholder="Specify"
+                    />
+                  </label>
+                </div>
+                <div class="medform-question-block">
+                  <p class="medform-question">
+                    Have you ever had a negative experience during dental
+                    treatment?
+                  </p>
+                  <div class="medform-radio-row">
+                    <label class="medform-radio">
+                      <input
+                        type="radio"
+                        name="negativeExperience"
+                        value="Yes"
+                      />
+                      Yes
+                    </label>
+                    <label class="medform-radio">
+                      <input
+                        type="radio"
+                        name="negativeExperience"
+                        value="No"
+                        checked
+                      />
+                      No
+                    </label>
+                  </div>
+                </div>
+                <div class="form-field">
+                  <label for="negativeExperienceNote"
+                    >If yes, please explain</label
+                  >
+                  <textarea
+                    id="negativeExperienceNote"
+                    name="negativeExperienceNote"
+                    rows="3"
+                    placeholder="Explain briefly"
+                  ></textarea>
+                </div>
+              </section>
+            </div>
+            <div class="medform-step" data-step="3">
+              <section class="medform-section">
+                <h3>Dental History</h3>
+                <div class="form-field">
+                  <label for="medLastVisit">Date of last dental visit</label>
+                  <input type="date" id="medLastVisit" name="medLastVisit" />
+                </div>
+                <div class="form-field">
+                  <label for="medLastTreatment"
+                    >What treatment was received during the last visit?</label
+                  >
+                  <textarea
+                    id="medLastTreatment"
+                    name="medLastTreatment"
+                    rows="4"
+                    placeholder="Describe treatment"
+                  ></textarea>
+                </div>
+              </section>
+              <section class="medform-section">
+                <h3>Current Medications</h3>
+                <p class="medform-question">
+                  Is the patient currently taking any medications or
+                  supplements?
+                </p>
+                <div class="medform-radio-row">
+                  <label class="medform-radio">
+                    <input type="radio" name="currentMedications" value="Yes" />
+                    Yes
+                  </label>
+                  <label class="medform-radio">
+                    <input
+                      type="radio"
+                      name="currentMedications"
+                      value="No"
+                      checked
+                    />
+                    No
+                  </label>
+                </div>
+                <div class="form-field">
+                  <label for="currentMedicationsList"
+                    >If yes, please list them</label
+                  >
+                  <textarea
+                    id="currentMedicationsList"
+                    name="currentMedicationsList"
+                    rows="3"
+                    placeholder="List medications or supplements"
+                  ></textarea>
+                </div>
+              </section>
+            </div>
+            <div class="medform-step" data-step="4">
+              <section class="medform-section">
+                <h3>Medical History</h3>
+                <div class="medform-checkbox-grid medform-checkbox-grid-1col">
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="High Blood Pressure (Hypertension)"
+                    />
+                    High Blood Pressure (Hypertension)
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Diabetes"
+                    />
+                    Diabetes
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Asthma"
+                    />
+                    Asthma
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Heart Disease"
+                    />
+                    Heart Disease
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Epilepsy/Seizures"
+                    />
+                    Epilepsy / Seizures
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Hepatitis"
+                    />
+                    Hepatitis
+                  </label>
+                  <label class="medform-checkbox medform-checkbox-other">
+                    <input type="checkbox" id="medicalOtherCheck" />
+                    <span>Other Medical Condition:</span>
+                    <input
+                      type="text"
+                      id="medicalOther"
+                      class="medform-inline-input"
+                      placeholder="Specify"
+                    />
+                  </label>
+                </div>
+              </section>
+              <section class="medform-section">
+                <h3>Allergies</h3>
+                <p class="medform-subtext">
+                  Is the patient allergic to any of the following?
+                </p>
+                <div class="medform-checkbox-grid medform-checkbox-grid-1col">
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="Penicillin"
+                    />
+                    Penicillin
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="Local Anesthetic"
+                    />
+                    Local Anesthetic
+                  </label>
+                  <label class="medform-checkbox">
+                    <input type="checkbox" name="allergies" value="Latex" />
+                    Latex
+                  </label>
+                  <label class="medform-checkbox">
+                    <input type="checkbox" name="allergies" value="Food" />
+                    Food
+                  </label>
+                  <label class="medform-checkbox medform-checkbox-other">
+                    <input type="checkbox" id="allergyOtherCheck" />
+                    <span>Other Medication / Allergy:</span>
+                    <input
+                      type="text"
+                      id="allergyOther"
+                      class="medform-inline-input"
+                      placeholder="Specify"
+                    />
+                  </label>
+                  <label class="medform-checkbox">
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="No Known Allergies"
+                    />
+                    No Known Allergies
+                  </label>
+                </div>
+              </section>
+            </div>
+            <div class="medform-step" data-step="5">
+              <section class="medform-section">
+                <h3>Review &amp; Consent</h3>
+                <p class="medform-subtext">
+                  Please review the information below before saving. You can go
+                  back and update any medical information.
+                </p>
+                <div class="medform-review" id="medformReview"></div>
+              </section>
+              <div class="medform-consent">
+                <label class="medform-checkbox">
+                  <input
+                    type="checkbox"
+                    id="medConsent"
+                    name="medConsent"
+                    required
+                  />
+                  <span
+                    >By checking this, you confirm that the information provided
+                    is accurate and agree to DentaNueva's
+                    <a href="#" target="_blank" rel="noopener">Consent</a
+                    >.</span
+                  >
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="patient-modal-actions medform-step-actions">
+            <button
+              type="button"
+              class="btn-modal-secondary"
+              id="cancelMedicalFormBtn"
+            >
+              Cancel
+            </button>
+            <div class="medform-step-nav-right">
+              <button
+                type="button"
+                class="btn-modal-secondary medform-back-btn"
+                id="medformBackBtn"
+                hidden
+              >
+                <i class="fa-solid fa-arrow-left"></i>
+                Back
+              </button>
+              <button
+                type="button"
+                class="btn-modal-primary medform-next-btn"
+                id="medformNextBtn"
+              >
+                Next
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+              <button
+                type="submit"
+                class="btn-modal-primary medform-submit-btn"
+                id="medformSubmitBtn"
+                hidden
+              >
+                Save Medical Form
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      class="patient-modal-backdrop"
+      id="patientDetailsModalBackdrop"
+      aria-hidden="true"
+    >
+      <div
+        class="patient-modal details-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="patientDetailsTitle"
+      >
+        <div class="patient-modal-header">
+          <div>
+            <span class="modal-eyebrow">PATIENT RECORD</span>
+            <h2 id="patientDetailsTitle">Patient Details</h2>
+          </div>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="closePatientDetailsModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="patient-details-body" id="patientDetailsBody"></div>
+      </div>
+    </div>
+    <div
+      class="patient-modal-backdrop"
+      id="medicalResultModalBackdrop"
+      aria-hidden="true"
+    >
+      <div
+        class="patient-modal medical-result-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="medicalResultTitle"
+      >
+        <div class="patient-modal-header">
+          <div>
+            <span class="modal-eyebrow">MEDICAL &amp; DENTAL HISTORY</span>
+            <h2 id="medicalResultTitle">Medical Form Record</h2>
+            <p class="medical-result-updated" id="medicalResultUpdated"></p>
+          </div>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="closeMedicalResultModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="medical-result-body" id="medicalResultBody"></div>
+        <div class="patient-modal-actions">
+          <button
+            type="button"
+            class="btn-modal-secondary"
+            id="closeMedicalResultBtn"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            class="btn-modal-primary"
+            id="editMedicalResultBtn"
+          >
+            Edit Medical Form
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="patient-action-menu" id="patientActionMenu">
+      <button type="button" data-action="view">
+        <i class="fa-regular fa-eye"></i>
+        <span>View Patient</span>
+      </button>
+      <button type="button" data-action="edit">
+        <i class="fa-regular fa-pen-to-square"></i>
+        <span>Edit Patient</span>
+      </button>
+      <button type="button" class="danger-action" data-action="delete">
+        <i class="fa-regular fa-trash-can"></i>
+        <span>Delete Patient</span>
+      </button>
+    </div>
+    <script src="patients.js"></script>
+    <script src="../../navigation_bar/sidebar.js"></script>
+    <script src="../profile/profile.js"></script>
+  </body>
+</html>

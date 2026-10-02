@@ -1,0 +1,1447 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DentaNueva - My Appointments</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../navigation_bar/sidebar.css" />
+    <link rel="stylesheet" href="appointment.css" />
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <aside id="sidebar-container"></aside>
+      <main class="main-content">
+        <div class="page-shell">
+          <section class="page-header">
+            <div class="page-heading">
+              <h1>My Appointments</h1>
+              <p>
+                Manage your dental appointments, schedules, and appointment
+                history.
+              </p>
+            </div>
+            <div class="page-header-actions">
+              <details class="appointment-info">
+                <summary
+                  aria-label="View appointment guidelines"
+                  title="Appointment guidelines"
+                >
+                  <i class="fa-solid fa-circle-info"></i>
+                </summary>
+                <div class="appointment-info-popover">
+                  <strong>Before Booking</strong>
+                  <p>
+                    <i class="fa-solid fa-circle-check"></i> Attend your
+                    appointment to have it marked Completed.
+                  </p>
+                  <p>
+                    <i class="fa-solid fa-calendar-xmark"></i> Cancel or
+                    reschedule in advance. These do not automatically restrict
+                    booking.
+                  </p>
+                  <p>
+                    <i class="fa-solid fa-triangle-exclamation"></i> Two No
+                    Shows give a warning.
+                  </p>
+                  <p>
+                    <i class="fa-solid fa-lock"></i> A third No Show restricts
+                    new booking for 2 days.
+                  </p>
+                  <small
+                    >Only new booking is restricted. Your portal access and
+                    appointment history remain available.</small
+                  >
+                </div>
+              </details>
+              <button
+                type="button"
+                class="btn-primary header-book-btn"
+                id="openBookingBtn"
+              >
+                <i class="fa-solid fa-calendar-plus"></i>
+                Book Appointment
+              </button>
+            </div>
+          </section>
+          <section
+            class="booking-restriction-alert"
+            id="bookingRestrictionAlert"
+            hidden
+          >
+            <div class="booking-restriction-icon">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+              <strong>Appointment booking temporarily restricted</strong>
+              <p id="bookingRestrictionMessage"></p>
+            </div>
+          </section>
+          <section
+            class="booking-warning-alert"
+            id="bookingWarningAlert"
+            hidden
+          >
+            <div class="booking-warning-icon">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <strong>Attendance warning</strong>
+              <p id="bookingWarningMessage"></p>
+            </div>
+          </section>
+          <section class="reschedule-alert" id="rescheduleAlert" hidden>
+            <div class="reschedule-alert-icon">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div class="reschedule-alert-content">
+              <div class="reschedule-alert-title">
+                <strong>Schedule change request</strong>
+                <span id="rescheduleReasonBadge">Pending</span>
+              </div>
+              <p id="rescheduleMessage">
+                Your appointment has a pending schedule change.
+              </p>
+              <div
+                class="reschedule-alert-details"
+                id="rescheduleAlertDetails"
+              ></div>
+            </div>
+            <button
+              type="button"
+              class="btn-secondary alert-action"
+              id="rescheduleAlertButton"
+            >
+              View Request
+            </button>
+          </section>
+          <div
+            class="modal-overlay"
+            id="rescheduleDetailsModal"
+            aria-hidden="true"
+          >
+            <div class="modal-container reschedule-details-modal">
+              <div class="modal-header">
+                <div>
+                  <span class="modal-kicker">Schedule Request</span>
+                  <h3>Reschedule Request Details</h3>
+                  <p>Review the details and current status of your request.</p>
+                </div>
+              </div>
+              <div class="modal-body">
+                <div
+                  class="reschedule-details-status"
+                  id="rescheduleDetailsStatus"
+                ></div>
+                <div class="detail-grid" id="rescheduleDetailsContent"></div>
+              </div>
+              <div class="modal-actions">
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  id="closeRescheduleDetails"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  class="btn-primary"
+                  id="confirmRescheduleDetails"
+                  hidden
+                >
+                  <i class="fa-solid fa-check"></i>
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="top-layout">
+            <section class="panel upcoming-panel">
+              <div class="panel-header upcoming-panel-header">
+                <div class="upcoming-panel-heading">
+                  <h2>Upcoming Appointment</h2>
+                  <p>Your next scheduled dental appointment.</p>
+                </div>
+              </div>
+              <div class="upcoming-content" id="upcomingAppointment">
+                <div class="empty-upcoming">
+                  <div class="empty-upcoming-icon">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                  </div>
+                  <h3>No appointments scheduled for today</h3>
+                  <p>You currently have no scheduled dental appointment.</p>
+                </div>
+              </div>
+            </section>
+            <section class="panel calendar-panel">
+              <div class="calendar-header">
+                <h4 id="calendarMonthLabel">August 2026</h4>
+                <div class="calendar-nav-btns">
+                  <button
+                    type="button"
+                    id="calendarPrevBtn"
+                    aria-label="Previous month"
+                  >
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <button
+                    type="button"
+                    id="calendarNextBtn"
+                    aria-label="Next month"
+                  >
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="calendar-grid-days" id="calGrid"></div>
+              <div class="calendar-legend">
+                <span>
+                  <i class="fa-solid fa-circle"></i>
+                  Appointment
+                </span>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="modal-overlay" id="bookingModal" aria-hidden="true">
+      <div class="modal-container booking-modal-container">
+        <div class="modal-header">
+          <div>
+            <span class="booking-step-label" id="bookingStepLabel"
+              >Step 1 of 2</span
+            >
+            <h3 id="modalTitle">New Appointment</h3>
+            <span class="modal-subtitle" id="modalSubtitle"
+              >Create a new appointment</span
+            >
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="closeBookingModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="booking-progress">
+          <div class="booking-progress-item active" id="bookingProgressStep1">
+            <span>1</span>
+            <div>
+              <strong>Appointment Details</strong>
+              <small>Select your schedule</small>
+            </div>
+          </div>
+          <div class="booking-progress-line" id="bookingProgressLine"></div>
+          <div class="booking-progress-item" id="bookingProgressStep2">
+            <span>2</span>
+            <div>
+              <strong>Patient Information</strong>
+              <small>Review your information</small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="booking-step" id="bookingStep1">
+            <div class="booking-section">
+              <div class="booking-section-header">
+                <div>
+                  <h4>Appointment Details</h4>
+                  <p>
+                    Select your preferred service, dentist, date, and available
+                    time.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="serviceInput">Service Type</label>
+                <div class="service-select-wrapper" id="serviceSelectWrapper">
+                  <input
+                    type="text"
+                    id="serviceInput"
+                    class="form-control service-select-input"
+                    placeholder="e.g. Dental Cleaning"
+                    autocomplete="off"
+                  />
+                  <i class="fa-solid fa-chevron-down service-select-arrow"></i>
+                  <div class="service-dropdown" id="serviceDropdown"></div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="dentistSelect">Dentist</label>
+                  <select id="dentistSelect" class="form-control">
+                    <option value="villanueva">Dr. Nathalia Villanueva</option>
+                    <option value="cruz">Dr. L. Cruz</option>
+                    <option value="ramos">Dr. J. Ramos</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="dateSelect">Date</label>
+                  <input type="date" id="dateSelect" class="form-control" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="durationInput">Duration</label>
+                <div class="duration-input-wrapper">
+                  <input
+                    type="number"
+                    id="durationInput"
+                    class="form-control"
+                    min="5"
+                    max="480"
+                    step="5"
+                    placeholder="e.g. 45"
+                  />
+                  <span class="duration-unit">minutes</span>
+                </div>
+                <small class="duration-help"
+                  >Service selection automatically suggests the duration.</small
+                >
+              </div>
+              <div class="form-group available-time-group">
+                <label for="timeTrigger">Available Time</label>
+                <div class="time-field-wrapper" id="timeFieldWrapper">
+                  <div class="time-picker-dropdown" id="timeDropdown"></div>
+                  <button
+                    type="button"
+                    id="timeTrigger"
+                    class="available-time-control time-trigger-btn"
+                  >
+                    <div class="available-time-icon">
+                      <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <span class="time-trigger-label" id="timeTriggerLabel"
+                      >Select an available time</span
+                    >
+                    <i
+                      class="fa-solid fa-chevron-down available-time-arrow time-trigger-arrow"
+                    ></i>
+                  </button>
+                </div>
+                <small
+                  id="availableTimeSummary"
+                  class="available-time-summary"
+                ></small>
+              </div>
+              <div id="scheduleConflictNotice" class="schedule-conflict-notice">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <div>
+                  <strong>Schedule conflict</strong>
+                  <span id="scheduleConflictText"
+                    >This dentist already has an appointment during the selected
+                    time.</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="booking-step" id="bookingStep2" hidden>
+            <div class="booking-section patient-information-section">
+              <div class="booking-section-header">
+                <div>
+                  <h4>Patient Information</h4>
+                  <p>
+                    Your existing patient information will be loaded
+                    automatically.
+                  </p>
+                </div>
+              </div>
+              <div class="patient-summary-card">
+                <div class="patient-summary-icon">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="patient-summary-content">
+                  <span>Patient ID</span>
+                  <strong id="patientSummaryId">—</strong>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="bookingPatientId">Patient ID</label>
+                <input
+                  type="text"
+                  id="bookingPatientId"
+                  class="form-control"
+                  readonly
+                />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firstName">First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    class="form-control"
+                    autocomplete="given-name"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="lastName">Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    class="form-control"
+                    autocomplete="family-name"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="dateOfBirth">Date of Birth</label>
+                  <input type="date" id="dateOfBirth" class="form-control" />
+                </div>
+                <div class="form-group">
+                  <label for="gender">Gender</label>
+                  <select id="gender" class="form-control">
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="phone">Phone Number</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    class="form-control"
+                    autocomplete="tel"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="email">Email Address</label>
+                  <input
+                    type="email"
+                    id="email"
+                    class="form-control"
+                    autocomplete="email"
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="address">Address</label>
+                <textarea id="address" class="form-control" rows="3"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="emergencyName">Emergency Contact Name</label>
+                  <input type="text" id="emergencyName" class="form-control" />
+                </div>
+                <div class="form-group">
+                  <label for="emergencyContact">Emergency Contact Number</label>
+                  <input
+                    type="tel"
+                    id="emergencyContact"
+                    class="form-control"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="booking-section medical-booking-section">
+              <div class="booking-section-header">
+                <div>
+                  <h4>Medical Information</h4>
+                  <p>
+                    Review the medical record linked to your account before
+                    confirming your appointment.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="medical-record-update-btn"
+                  id="updateMedicalRecordBtn"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                  Update record
+                </button>
+              </div>
+              <div
+                class="medical-record-summary"
+                id="medicalRecordSummary"
+              ></div>
+              <div class="form-group">
+                <label>Dental Concern</label>
+                <div class="booking-checkbox-grid">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Toothache"
+                      id="dentalConcern"
+                    />
+                    <span>Toothache</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Dentures"
+                    />
+                    <span>Dentures</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Cleaning"
+                    />
+                    <span>Cleaning</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Whitening"
+                    />
+                    <span>Whitening</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Filling"
+                    />
+                    <span>Filling</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Tooth Extraction"
+                    />
+                    <span>Tooth Extraction</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Braces Consultation"
+                    />
+                    <span>Braces Consultation</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      id="dentalConcernOtherCheck"
+                      name="dentalConcern"
+                      value="Other"
+                    />
+                    <span>Other</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="dentalConcernOther">Other Dental Concern</label>
+                <input
+                  type="text"
+                  id="dentalConcernOther"
+                  class="form-control"
+                  placeholder="Please specify"
+                />
+              </div>
+              <div class="form-group">
+                <label>Previous Negative Dental Experience</label>
+                <div class="booking-radio-row">
+                  <label>
+                    <input type="radio" name="negativeExperience" value="Yes" />
+                    <span>Yes</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="negativeExperience" value="No" />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="negativeExperienceNote"
+                  >Details of Previous Experience</label
+                >
+                <textarea
+                  id="negativeExperienceNote"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Please provide details if applicable."
+                ></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="lastDentalVisit">Last Dental Visit</label>
+                  <input
+                    type="date"
+                    id="lastDentalVisit"
+                    class="form-control"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="lastDentalTreatment">Last Dental Treatment</label>
+                  <input
+                    type="text"
+                    id="lastDentalTreatment"
+                    class="form-control"
+                    placeholder="e.g. Dental Cleaning"
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Are you currently taking medications?</label>
+                <div class="booking-radio-row">
+                  <label>
+                    <input type="radio" name="currentMedications" value="Yes" />
+                    <span>Yes</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="currentMedications" value="No" />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="medicationList">Current Medications</label>
+                <textarea
+                  id="medicationList"
+                  class="form-control"
+                  rows="3"
+                  placeholder="List your current medications if applicable."
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label>Medical History</label>
+                <div class="booking-checkbox-grid">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Hypertension"
+                      id="medicalHistory"
+                    />
+                    <span>Hypertension</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Diabetes"
+                    />
+                    <span>Diabetes</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Asthma"
+                    />
+                    <span>Asthma</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Heart Disease"
+                    />
+                    <span>Heart Disease</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Epilepsy/Seizures"
+                    />
+                    <span>Epilepsy/Seizures</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Hepatitis"
+                    />
+                    <span>Hepatitis</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      id="medicalOtherCheck"
+                      name="medicalHistory"
+                      value="Other"
+                    />
+                    <span>Other</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="medicalOther">Other Medical Condition</label>
+                <input
+                  type="text"
+                  id="medicalOther"
+                  class="form-control"
+                  placeholder="Please specify"
+                />
+              </div>
+              <div class="form-group">
+                <label>Allergies</label>
+                <div class="booking-checkbox-grid">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="Penicillin"
+                      id="allergies"
+                    />
+                    <span>Penicillin</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="Local Anesthetic"
+                    />
+                    <span>Local Anesthetic</span>
+                  </label>
+                  <label>
+                    <input type="checkbox" name="allergies" value="Latex" />
+                    <span>Latex</span>
+                  </label>
+                  <label>
+                    <input type="checkbox" name="allergies" value="Food" />
+                    <span>Food</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      id="allergyOtherCheck"
+                      name="allergies"
+                      value="Other"
+                    />
+                    <span>Other</span>
+                  </label>
+                </div>
+                <div class="form-group">
+                  <label for="allergyOther">Other Allergy</label>
+                  <input
+                    type="text"
+                    id="allergyOther"
+                    class="form-control"
+                    placeholder="Please specify"
+                  />
+                </div>
+              </div>
+              <div class="record-edit-section-heading">
+                <div>
+                  <span class="record-edit-step">05</span>
+                  <div>
+                    <h4>Consent</h4>
+                    <p>Confirm that the information you provided is accurate.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="booking-consent">
+                <label>
+                  <input type="checkbox" id="consentCheckbox" />
+                  <span
+                    >I confirm that the information I provided is accurate and I
+                    consent to the clinic storing and using this information for
+                    my dental care and appointment management.</span
+                  >
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelBooking">
+            Cancel
+          </button>
+          <button type="button" class="btn-secondary" id="backBooking" hidden>
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+          </button>
+          <button type="button" class="btn-primary" id="continueBooking">
+            Continue
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <button type="button" class="btn-primary" id="confirmBooking" hidden>
+            <i class="fa-solid fa-calendar-check"></i>
+            Confirm Booking
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal-overlay record-edit-overlay"
+      id="recordEditModal"
+      aria-hidden="true"
+    >
+      <div
+        class="modal-container record-edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recordEditTitle"
+      >
+        <div class="modal-header">
+          <div>
+            <span class="modal-kicker">MEDICAL &amp; DENTAL HISTORY</span>
+            <h3 id="recordEditTitle">Update Medical Record</h3>
+            <span class="modal-subtitle"
+              >Keep your information accurate before booking.</span
+            >
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="closeRecordEditModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body record-edit-body">
+          <div class="record-edit-intro">
+            <i class="fa-solid fa-shield-heart"></i>
+            <span
+              >This information is shared with your patient record and clinic
+              care team.</span
+            >
+          </div>
+          <section class="record-edit-section">
+            <div class="record-edit-section-heading">
+              <div>
+                <span class="record-edit-step">01</span>
+                <div>
+                  <h4>Personal Information</h4>
+                  <p>Make sure your personal information is complete and correct.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="record-edit-form-row">
+              <div class="record-edit-field">
+                <label for="recordEditFirstName">First Name</label>
+                <input
+                  type="text"
+                  id="recordEditFirstName"
+                  placeholder="Enter your first name"
+                  required
+                />
+              </div>
+
+              <div class="record-edit-field">
+                <label for="recordEditLastName">Last Name</label>
+                <input
+                  type="text"
+                  id="recordEditLastName"
+                  placeholder="Enter your last name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="record-edit-form-row">
+              <div class="record-edit-field">
+                <label for="recordEditDateOfBirth">Date of Birth</label>
+                <input
+                  type="date"
+                  id="recordEditDateOfBirth"
+                  required
+                />
+              </div>
+
+              <div class="record-edit-field">
+                <label for="recordEditGender">Gender</label>
+                <select id="recordEditGender" required>
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="record-edit-form-row">
+              <div class="record-edit-field">
+                <label for="recordEditPhone">Phone Number</label>
+                <input
+                  type="tel"
+                  id="recordEditPhone"
+                  placeholder="09XXXXXXXXX"
+                  required
+                />
+              </div>
+
+              <div class="record-edit-field">
+                <label for="recordEditEmail">Email Address</label>
+                <input
+                  type="email"
+                  id="recordEditEmail"
+                  placeholder="Enter your email address"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="record-edit-field">
+              <label for="recordEditAddress">Complete Address</label>
+              <input
+                type="text"
+                id="recordEditAddress"
+                placeholder="House/Unit, Street, Barangay, City"
+                required
+              />
+            </div>
+
+            <div class="record-edit-form-row">
+              <div class="record-edit-field">
+                <label for="recordEditEmergencyName">Emergency Contact Name</label>
+                <input
+                  type="text"
+                  id="recordEditEmergencyName"
+                  placeholder="Enter emergency contact name"
+                  required
+                />
+              </div>
+
+              <div class="record-edit-field">
+                <label for="recordEditEmergencyContact">
+                  Emergency Contact No.
+                </label>
+                <input
+                  type="tel"
+                  id="recordEditEmergencyContact"
+                  placeholder="09XXXXXXXXX"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="record-edit-info">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>
+                This information will be used to identify your patient record and
+                connect it with your appointments and clinic records.
+              </span>
+            </div>
+          </section>
+          <section class="record-edit-section">
+            <div class="record-edit-section-heading">
+              <div>
+                <span class="record-edit-step">02</span>
+                <div>
+                  <h4>Dental Concern</h4>
+                  <p>Select all that apply.</p>
+                </div>
+              </div>
+            </div>
+            <div class="record-edit-check-grid">
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditDentalConcern"
+                  value="Toothache"
+                /><span>Toothache</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditDentalConcern"
+                  value="Dentures"
+                /><span>Dentures</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditDentalConcern"
+                  value="Cleaning"
+                /><span>Cleaning</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditDentalConcern"
+                  value="Whitening"
+                /><span>Whitening</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditDentalConcern"
+                  value="Filling"
+                /><span>Filling</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditDentalConcern"
+                  value="Tooth Extraction"
+                /><span>Tooth Extraction</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditDentalConcern"
+                  value="Braces Consultation"
+                /><span>Braces Consultation</span></label
+              >
+              <label class="record-edit-other"
+                ><input
+                  type="checkbox"
+                  id="recordEditDentalConcernOtherCheck" /><span>Other</span
+                ><input
+                  type="text"
+                  id="recordEditDentalConcernOther"
+                  placeholder="Specify"
+              /></label>
+            </div>
+            <div class="record-edit-field">
+              <label>Previous Negative Dental Experience</label>
+              <div class="record-edit-radio-row">
+                <label
+                  ><input
+                    type="radio"
+                    name="recordEditNegativeExperience"
+                    value="Yes"
+                  /><span>Yes</span></label
+                ><label
+                  ><input
+                    type="radio"
+                    name="recordEditNegativeExperience"
+                    value="No"
+                  /><span>No</span></label
+                >
+              </div>
+            </div>
+            <div class="record-edit-field">
+              <label for="recordEditNegativeExperienceNote"
+                >Details of Previous Experience</label
+              ><textarea
+                id="recordEditNegativeExperienceNote"
+                rows="3"
+                placeholder="Explain briefly if applicable."
+              ></textarea>
+            </div>
+          </section>
+          <section class="record-edit-section">
+            <div class="record-edit-section-heading">
+              <div>
+                <span class="record-edit-step">03</span>
+                <div>
+                  <h4>Dental History</h4>
+                  <p>Tell us about your last dental visit.</p>
+                </div>
+              </div>
+            </div>
+            <div class="record-edit-form-row">
+              <div class="record-edit-field">
+                <label for="recordEditLastDentalVisit">Last Dental Visit</label
+                ><input type="date" id="recordEditLastDentalVisit" />
+              </div>
+              <div class="record-edit-field">
+                <label for="recordEditLastDentalTreatment">Last Treatment</label
+                ><input
+                  type="text"
+                  id="recordEditLastDentalTreatment"
+                  placeholder="Describe the treatment"
+                />
+              </div>
+            </div>
+            <div class="record-edit-field">
+              <label>Current Medications</label>
+              <div class="record-edit-radio-row">
+                <label
+                  ><input
+                    type="radio"
+                    name="recordEditCurrentMedications"
+                    value="Yes"
+                  /><span>Yes</span></label
+                ><label
+                  ><input
+                    type="radio"
+                    name="recordEditCurrentMedications"
+                    value="No"
+                  /><span>No</span></label
+                >
+              </div>
+            </div>
+            <div class="record-edit-field">
+              <label for="recordEditMedicationList"
+                >Medication or Supplement List</label
+              ><textarea
+                id="recordEditMedicationList"
+                rows="3"
+                placeholder="List medications or supplements if applicable."
+              ></textarea>
+            </div>
+          </section>
+          <section class="record-edit-section">
+            <div class="record-edit-section-heading">
+              <div>
+                <span class="record-edit-step">04</span>
+                <div>
+                  <h4>Medical History &amp; Allergies</h4>
+                  <p>Select any condition or allergy that applies.</p>
+                </div>
+              </div>
+            </div>
+            <label class="record-edit-group-label">Medical History</label>
+            <div class="record-edit-check-grid">
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditMedicalHistory"
+                  value="High Blood Pressure (Hypertension)"
+                /><span>Hypertension</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditMedicalHistory"
+                  value="Diabetes"
+                /><span>Diabetes</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditMedicalHistory"
+                  value="Asthma"
+                /><span>Asthma</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditMedicalHistory"
+                  value="Heart Disease"
+                /><span>Heart Disease</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditMedicalHistory"
+                  value="Epilepsy/Seizures"
+                /><span>Epilepsy / Seizures</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditMedicalHistory"
+                  value="Hepatitis"
+                /><span>Hepatitis</span></label
+              >
+              <label class="record-edit-other"
+                ><input type="checkbox" id="recordEditMedicalOtherCheck" /><span
+                  >Other</span
+                ><input
+                  type="text"
+                  id="recordEditMedicalOther"
+                  placeholder="Specify"
+              /></label>
+            </div>
+            <label class="record-edit-group-label">Allergies</label>
+            <div class="record-edit-check-grid">
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditAllergies"
+                  value="Penicillin"
+                /><span>Penicillin</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditAllergies"
+                  value="Local Anesthetic"
+                /><span>Local Anesthetic</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditAllergies"
+                  value="Latex"
+                /><span>Latex</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditAllergies"
+                  value="Food"
+                /><span>Food</span></label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  name="recordEditAllergies"
+                  value="No Known Allergies"
+                /><span>No Known Allergies</span></label
+              >
+              <label class="record-edit-other"
+                ><input type="checkbox" id="recordEditAllergyOtherCheck" /><span
+                  >Other</span
+                ><input
+                  type="text"
+                  id="recordEditAllergyOther"
+                  placeholder="Specify"
+              /></label>
+            </div>
+          </section>
+          <label class="record-edit-consent"
+            ><input type="checkbox" id="recordEditConsent" /><span
+              >I confirm that this information is accurate and complete.</span
+            ></label
+          >
+        </div>
+        <div class="modal-actions record-edit-actions">
+          <button type="button" class="btn-secondary" id="cancelRecordEdit">
+            Cancel</button
+          ><button type="button" class="btn-primary" id="saveRecordEdit">
+            <i class="fa-solid fa-check"></i> Save changes
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="appointmentModal" aria-hidden="true">
+      <div class="modal-container appointment-detail-modal">
+        <div class="modal-header">
+          <div>
+            <span class="modal-kicker">Appointment</span>
+            <h3>Appointment Details</h3>
+            <p id="appointmentModalSubtitle">Appointment information</p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="closeAppointmentModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body" id="appointmentDetailBody"></div>
+        <div class="modal-actions detail-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            id="closeAppointmentDetail"
+          >
+            Close
+          </button>
+          <button type="button" class="btn-delete" id="deleteAppointmentBtn">
+            <i class="fa-solid fa-trash"></i>
+            Delete
+          </button>
+          <button type="button" class="btn-delete" id="cancelAppointmentBtn">
+            <i class="fa-solid fa-ban"></i>
+            Cancel Appointment
+          </button>
+          <button type="button" class="btn-request" id="requestRescheduleBtn">
+            <i class="fa-solid fa-calendar-days"></i>
+            Reschedule
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal-overlay"
+      id="cancelAppointmentConfirmModal"
+      aria-hidden="true"
+    >
+      <div class="modal-container cancel-confirm-modal">
+        <div class="modal-header">
+          <div>
+            <span class="modal-kicker">Cancel Appointment</span>
+            <h3>Cancel this appointment?</h3>
+            <p id="cancelAppointmentConfirmMessage">
+              The time slot will become available again and this appointment
+              will stay in your history.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="closeCancelAppointmentConfirm"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-actions detail-actions">
+          <button type="button" class="btn-secondary" id="keepAppointmentBtn">
+            Keep Appointment
+          </button>
+          <button
+            type="button"
+            class="btn-delete"
+            id="confirmCancelAppointmentBtn"
+          >
+            <i class="fa-solid fa-ban"></i>
+            Yes, Cancel Appointment
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="rescheduleRequestModal" aria-hidden="true">
+      <div class="modal-container">
+        <div class="modal-header">
+          <div>
+            <span class="modal-kicker">Schedule Request</span>
+            <h3>Reschedule Appointment</h3>
+            <p>Select a new available date and time for this appointment.</p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="closeRescheduleRequestModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div
+            class="current-appointment-box"
+            id="requestCurrentAppointment"
+          ></div>
+          <div class="form-group">
+            <label for="requestDate">Preferred New Date</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-calendar field-icon"></i>
+              <input type="date" id="requestDate" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="time-label-row">
+              <label>Preferred New Time</label>
+              <span id="requestAvailabilityCount">Select a date</span>
+            </div>
+            <div class="time-grid request-time-grid" id="requestTimeGrid">
+              <div class="time-empty">
+                <i class="fa-regular fa-clock"></i>
+                <span>Select a preferred date to view available times.</span>
+              </div>
+            </div>
+          </div>
+          <div class="request-info-box">
+            <i class="fa-solid fa-circle-info"></i>
+            <span
+              >Your appointment will update immediately after the new schedule
+              is confirmed.</span
+            >
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            id="cancelRescheduleRequest"
+          >
+            Cancel
+          </button>
+          <button type="button" class="btn-primary" id="sendRescheduleRequest">
+            <i class="fa-solid fa-calendar-check"></i>
+            Reschedule
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="staffRescheduleModal" aria-hidden="true">
+      <div class="modal-container">
+        <div class="modal-header">
+          <div>
+            <span class="modal-kicker">Schedule Request</span>
+            <h3>Reschedule Request from Clinic</h3>
+            <p>
+              Review the clinic's request and select your new preferred
+              schedule.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="closeStaffRescheduleModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div
+            class="current-appointment-box"
+            id="staffRequestCurrentAppointment"
+          ></div>
+          <div class="form-group">
+            <label for="staffRequestReason">Reason for Schedule Change</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-circle-question field-icon"></i>
+              <input
+                type="text"
+                id="staffRequestReason"
+                class="form-control"
+                disabled
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="staffRequestMessage">Message from Clinic</label>
+            <textarea
+              id="staffRequestMessage"
+              class="form-control textarea-control"
+              rows="4"
+              disabled
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="staffRequestDate">Preferred New Date</label>
+            <div class="input-wrapper">
+              <i class="fa-regular fa-calendar field-icon"></i>
+              <input type="date" id="staffRequestDate" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="time-label-row">
+              <label>Preferred New Time</label>
+              <span id="staffRequestAvailabilityCount">Select a date</span>
+            </div>
+            <div class="time-grid" id="staffRequestTimeGrid">
+              <div class="time-empty">
+                <i class="fa-regular fa-clock"></i>
+                <span>Select a preferred date to view available times.</span>
+              </div>
+            </div>
+          </div>
+          <div class="request-info-box">
+            <i class="fa-solid fa-circle-info"></i>
+            <span
+              >Confirming will set this as your new appointment schedule.</span
+            >
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            id="cancelStaffReschedule"
+          >
+            Cancel
+          </button>
+          <button type="button" class="btn-primary" id="confirmStaffReschedule">
+            <i class="fa-solid fa-calendar-check"></i>
+            Confirm New Schedule
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script src="../../shared/appointment_behavior.js"></script>
+    <script src="../../shared/appointment_database.js"></script>
+    <script src="../navigation_bar/sidebar.js"></script>
+    <script src="appointment.js"></script>
+  </body>
+</html>

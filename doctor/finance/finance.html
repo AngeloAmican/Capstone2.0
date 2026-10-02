@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DentaNueva - Finance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../navigationbar/sidebar.css" />
+    <link rel="stylesheet" href="../profile/profile.css" />
+    <link rel="stylesheet" href="finance.css" />
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <aside id="sidebar-container"></aside>
+      <main class="main-content">
+        <header class="finance-header">
+          <div class="finance-header-info">
+            <h1>FINANCE</h1>
+            <p>
+              Manage transactions, track revenue and expenses, and monitor the
+              clinic's financial health.
+            </p>
+          </div>
+          <div class="header-actions">
+            <span class="transaction-count" id="transactionCount"
+              >0 transactions</span
+            >
+            <button
+              type="button"
+              class="header-action-btn"
+              id="monthlyExpensesButton"
+            >
+              <i class="fa-regular fa-calendar-days"></i>
+              Monthly Expenses
+            </button>
+            <button type="button" class="primary-btn" id="recordPaymentButton">
+              <i class="fa-solid fa-plus"></i>
+              Record Payment
+            </button>
+          </div>
+        </header>
+        <section class="summary-grid">
+          <article class="finance-card revenue-card">
+            <div class="card-icon green-icon">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div class="card-information">
+              <div class="card-title-row">
+                <span id="revenueCardTitle">Today's Revenue</span>
+              </div>
+              <strong id="revenueAmount">₱0.00</strong>
+              <div class="revenue-meta">
+                <span class="card-subtitle" id="revenueSubtitle"
+                  >Today's collection</span
+                >
+                <button type="button" class="metric-switch" id="revenueSwitch">
+                  <span id="revenueSwitchText">Today</span>
+                  <i class="fa-solid fa-chevron-down"></i>
+                </button>
+              </div>
+            </div>
+          </article>
+          <article class="finance-card monthly-revenue-card">
+            <div class="card-icon blue-icon">
+              <i class="fa-regular fa-calendar"></i>
+            </div>
+            <div class="card-information">
+              <span>Net Income</span>
+              <strong id="monthlyRevenueAmount">₱0.00</strong>
+            </div>
+          </article>
+          <article class="finance-card">
+            <div class="card-icon orange-icon">
+              <i class="fa-solid fa-peso-sign"></i>
+            </div>
+            <div class="card-information">
+              <span>Outstanding Balance</span>
+              <strong id="outstandingBalance">₱0.00</strong>
+              <span class="card-subtitle" id="outstandingSubtitle"
+                >0 active balances</span
+              >
+            </div>
+          </article>
+          <article class="finance-card">
+            <div class="card-icon purple-icon">
+              <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <div class="card-information">
+              <span>Monthly Expenses</span>
+              <strong id="monthlyExpenses">₱0.00</strong>
+              <span class="card-subtitle expense-change">
+                <i class="fa-solid fa-arrow-up"></i>
+                <span id="expenseChange">0% vs last month</span>
+              </span>
+            </div>
+          </article>
+        </section>
+        <section class="content-card transactions-card">
+          <div class="transaction-filters">
+            <div class="search-wrapper">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                id="transactionSearch"
+                placeholder="Search patient or transaction..."
+                autocomplete="off"
+              />
+            </div>
+            <select id="paymentMethodFilter">
+              <option value="all">All Payment Methods</option>
+              <option value="Cash">Cash</option>
+              <option value="GCash">GCash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Card">Card</option>
+            </select>
+            <select id="transactionDateFilter">
+              <option value="all">All Dates</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+          </div>
+          <div class="table-wrapper">
+            <table class="transaction-table">
+              <thead>
+                <tr>
+                  <th>PATIENT</th>
+                  <th>SERVICE</th>
+                  <th>DATE</th>
+                  <th>TOTAL</th>
+                  <th>DISCOUNT</th>
+                  <th>PAID</th>
+                  <th>BALANCE</th>
+                  <th>STATUS</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="transactionsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="charts-grid">
+          <article class="content-card chart-card">
+            <div class="chart-header">
+              <div>
+                <h2>Revenue by Procedure</h2>
+              </div>
+            </div>
+            <div class="procedure-chart" id="procedureChart"></div>
+          </article>
+          <article class="content-card chart-card">
+            <div class="chart-header">
+              <div>
+                <h2>Revenue vs Expenses</h2>
+                <div class="chart-legend">
+                  <span>
+                    <i class="legend-dot revenue-dot"></i>
+                    Revenue
+                  </span>
+                  <span>
+                    <i class="legend-dot expense-dot"></i>
+                    Expenses
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="line-chart-wrapper">
+              <svg
+                id="revenueExpenseChart"
+                viewBox="0 0 700 300"
+                preserveAspectRatio="none"
+              ></svg>
+            </div>
+          </article>
+        </section>
+        <section class="lower-grid">
+          <div>
+            <article class="content-card expense-card">
+              <div class="chart-header">
+                <div>
+                  <h2>Monthly Expenses Overview</h2>
+                  <p>Categories</p>
+                </div>
+              </div>
+              <div class="expense-chart-layout">
+                <div
+                  class="expense-category-list"
+                  id="expenseCategoryList"
+                ></div>
+                <div class="pie-chart-container">
+                  <div class="expense-pie-chart" id="expensePieChart"></div>
+                </div>
+              </div>
+            </article>
+            <article class="content-card audit-card">
+              <div class="audit-title">
+                <i class="fa-solid fa-lock"></i>
+                <h2>Financial Audit Trail</h2>
+              </div>
+              <div id="auditTrail"></div>
+            </article>
+          </div>
+          <article class="content-card collection-card">
+            <div class="collection-header">
+              <div>
+                <h2>Collections</h2>
+                <p>Payment collection</p>
+              </div>
+              <button type="button" class="view-all-btn">
+                View All
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+            <div class="collection-tabs">
+              <button
+                type="button"
+                class="collection-tab active"
+                data-period="today"
+              >
+                Today
+              </button>
+              <button type="button" class="collection-tab" data-period="month">
+                This Month
+              </button>
+            </div>
+            <div class="collection-list" id="collectionList"></div>
+            <div class="collection-total">
+              <span id="collectionTotalLabel">Total Collected Today</span>
+              <strong id="collectionTotal">₱0.00</strong>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+    <div class="modal-overlay" id="paymentModal">
+      <div class="payment-modal">
+        <div class="modal-header">
+          <div>
+            <h2>Record Payment</h2>
+            <p>Add a patient payment transaction.</p>
+          </div>
+          <button type="button" class="modal-close" id="closePaymentModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="payment-form">
+          <div class="form-group">
+            <label>Patient</label>
+            <input
+              type="text"
+              id="paymentPatient"
+              placeholder="Select patient"
+              autocomplete="off"
+            />
+            <input type="hidden" id="paymentPatientId" />
+            <datalist id="paymentPatientList"></datalist>
+          </div>
+          <div class="form-group">
+            <label>Service</label>
+            <input type="text" id="paymentService" placeholder="Service" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Total</label>
+              <input
+                type="number"
+                id="paymentTotal"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+              />
+            </div>
+            <div class="form-group">
+              <label>Discount</label>
+              <input
+                type="number"
+                id="paymentDiscount"
+                min="0"
+                step="0.01"
+                value="0"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Paid</label>
+              <input
+                type="number"
+                id="paymentPaid"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+              />
+            </div>
+            <div class="form-group">
+              <label>Payment Method</label>
+              <select id="paymentMethod">
+                <option value="Cash">Cash</option>
+                <option value="GCash">GCash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Card">Card</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" id="cancelPaymentButton">
+            Cancel
+          </button>
+          <button type="button" class="primary-btn" id="savePaymentButton">
+            Save Payment
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="detailsModal">
+      <div class="details-modal">
+        <div class="modal-header">
+          <div>
+            <span class="modal-label">TRANSACTION</span>
+            <h2>Payment Details</h2>
+          </div>
+          <button type="button" class="close-button" id="closeDetailsBtn">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="details-content">
+          <div class="transaction-reference">
+            <span>Transaction ID</span>
+            <strong id="detailTransactionId">-</strong>
+          </div>
+          <div class="details-grid">
+            <div>
+              <span>Patient</span>
+              <strong id="detailPatient">-</strong>
+            </div>
+            <div>
+              <span>Service</span>
+              <strong id="detailService">-</strong>
+            </div>
+            <div>
+              <span>Total</span>
+              <strong id="detailTotal">₱0.00</strong>
+            </div>
+            <div>
+              <span>Discount</span>
+              <strong id="detailDiscount">₱0.00</strong>
+            </div>
+            <div>
+              <span>Paid</span>
+              <strong id="detailPaid">₱0.00</strong>
+            </div>
+            <div>
+              <span>Balance</span>
+              <strong id="detailBalance">₱0.00</strong>
+            </div>
+            <div>
+              <span>Payment Method(s)</span>
+              <strong id="detailMethod">-</strong>
+            </div>
+            <div>
+              <span>Date</span>
+              <strong id="detailDate">-</strong>
+            </div>
+            <div class="detail-status-item">
+              <span>Status</span>
+              <strong id="detailStatus">-</strong>
+            </div>
+          </div>
+          <div class="details-note">
+            <span>Notes</span>
+            <p id="detailNotes">No notes.</p>
+          </div>
+          <div class="payment-history-section">
+            <div class="payment-history-header">
+              <div>
+                <span>PAYMENT HISTORY</span>
+                <h3>Payment History</h3>
+                <p>View all payments recorded for this transaction.</p>
+              </div>
+              <div class="payment-history-count" id="paymentHistoryCount">
+                0 payments
+              </div>
+            </div>
+            <div class="payment-history-list" id="paymentHistoryList">
+              <div class="payment-history-empty" id="paymentHistoryEmpty">
+                <div class="payment-history-empty-icon">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <strong>No payment history</strong>
+                <p>Additional payments will appear here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="details-actions">
+          <button type="button" class="secondary-btn" id="detailsCloseButton">
+            Close
+          </button>
+          <button type="button" class="secondary-btn" id="printReceiptBtn">
+            Print Receipt
+          </button>
+        </div>
+      </div>
+    </div>
+    <script src="../navigationbar/sidebar.js"></script>
+    <script src="../profile/profile.js"></script>
+    <script src="finance.js"></script>
+  </body>
+</html>

@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payments | DentaNueva Dental Clinic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../navigation_bar/sidebar.css" />
+    <link rel="stylesheet" href="payments.css" />
+  </head>
+  <body>
+    <div class="payments-layout">
+      <aside id="sidebar-container"></aside>
+      <main class="payments-main">
+        <div class="payments-content">
+          <header class="payments-page-header">
+            <div class="payments-heading">
+              <h1>Payments</h1>
+              <p>
+                View your treatment charges, payment history, and remaining
+                balance.
+              </p>
+            </div>
+          </header>
+          <section class="payment-summary-grid">
+            <div class="payment-summary-card">
+              <div class="summary-card-top">
+                <span>Total Paid</span>
+                <div class="summary-icon paid">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+              </div>
+              <strong id="totalPaid">₱0.00</strong>
+              <p>Total amount already paid</p>
+            </div>
+            <div class="payment-summary-card">
+              <div class="summary-card-top">
+                <span>Payments Recorded</span>
+                <div class="summary-icon treatment">
+                  <i class="fa-solid fa-receipt"></i>
+                </div>
+              </div>
+              <strong id="paymentCount">0</strong>
+              <p>Total payment transactions</p>
+            </div>
+            <div class="payment-summary-card balance-card">
+              <div class="summary-card-top">
+                <span>Current Balance</span>
+                <div class="summary-icon balance">
+                  <i class="fa-solid fa-wallet"></i>
+                </div>
+              </div>
+              <strong id="currentBalance">₱0.00</strong>
+              <p id="balanceStatus">No outstanding balance</p>
+            </div>
+          </section>
+          <section class="payment-history-card">
+            <div class="payment-history-header">
+              <div>
+                <h2>Payment History</h2>
+                <p>Your recorded payments and transaction details.</p>
+              </div>
+              <span class="transaction-count" id="transactionCount"
+                >0 transactions</span
+              >
+            </div>
+            <div class="payment-filters">
+              <button
+                type="button"
+                class="payment-filter active"
+                data-filter="all"
+              >
+                All
+              </button>
+              <button type="button" class="payment-filter" data-filter="paid">
+                Paid
+              </button>
+              <button
+                type="button"
+                class="payment-filter"
+                data-filter="partial"
+              >
+                Partial
+              </button>
+            </div>
+            <div class="payment-table-wrapper">
+              <table class="payment-table">
+                <thead>
+                  <tr>
+                    <th>Transaction</th>
+                    <th>Service</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Discount</th>
+                    <th>Paid</th>
+                    <th>Payment Method</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentTableBody"></tbody>
+              </table>
+            </div>
+            <div class="payment-mobile-list" id="paymentMobileList"></div>
+            <div class="payment-empty-state" id="paymentEmptyState" hidden>
+              <div class="payment-empty-icon">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <h3>No payment records found</h3>
+              <p>
+                There are no payment transactions available for the selected
+                filter.
+              </p>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <div class="payment-modal" id="paymentModal" hidden>
+      <div class="payment-modal-overlay" id="paymentModalOverlay"></div>
+      <div class="payment-modal-dialog">
+        <div class="payment-modal-header">
+          <div>
+            <span class="section-eyebrow">PAYMENT RECORD</span>
+            <h2>Transaction Details</h2>
+          </div>
+          <button
+            type="button"
+            class="payment-modal-close"
+            id="paymentModalClose"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="payment-modal-body" id="paymentModalBody"></div>
+      </div>
+    </div>
+    <div class="receipt-modal" id="receiptModal" hidden>
+      <div class="receipt-modal-overlay" id="receiptModalOverlay"></div>
+      <div class="receipt-modal-dialog">
+        <div class="receipt-modal-header">
+          <div>
+            <span class="section-eyebrow">PAYMENT RECEIPT</span>
+            <h2>Official Payment Receipt</h2>
+          </div>
+          <button
+            type="button"
+            class="receipt-modal-close"
+            id="receiptModalClose"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="receipt-modal-body" id="receiptModalBody"></div>
+        <div class="receipt-modal-actions">
+          <button
+            type="button"
+            class="receipt-secondary-button"
+            id="receiptCloseButton"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            class="receipt-primary-button"
+            id="printReceiptButton"
+          >
+            <i class="fa-solid fa-print"></i>
+            Print Receipt
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="patient-pay-modal" id="patientPayModal" hidden>
+      <div class="patient-pay-overlay" id="patientPayOverlay"></div>
+      <div class="patient-pay-dialog">
+        <div class="patient-pay-header">
+          <div>
+            <span>PAYMENT</span>
+            <h2>Pay Remaining Balance</h2>
+          </div>
+          <button
+            type="button"
+            class="patient-pay-close"
+            id="patientPayClose"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="patient-pay-body">
+          <div class="patient-pay-summary">
+            <div>
+              <span>Service</span>
+              <strong id="payService">-</strong>
+            </div>
+            <div>
+              <span>Total Charge</span>
+              <strong id="payTotal">₱0.00</strong>
+            </div>
+            <div>
+              <span>Already Paid</span>
+              <strong id="payAlreadyPaid">₱0.00</strong>
+            </div>
+            <div>
+              <span>Remaining Balance</span>
+              <strong id="payRemainingBalance">₱0.00</strong>
+            </div>
+          </div>
+          <form id="patientPayForm">
+            <div class="patient-pay-field">
+              <label for="patientPayAmount">Amount to Pay</label>
+              <div class="patient-pay-amount-input">
+                <span>₱</span>
+                <input
+                  type="number"
+                  id="patientPayAmount"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <small id="patientPayAmountHint"></small>
+            </div>
+            <div class="patient-pay-field">
+              <label for="patientPayMethod">Payment Method</label>
+              <select id="patientPayMethod" required>
+                <option value="">Select method</option>
+                <option value="Cash">Cash</option>
+                <option value="GCash">GCash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Card">Card</option>
+              </select>
+            </div>
+            <div
+              class="patient-pay-process"
+              id="patientPayProcess"
+              hidden
+            ></div>
+            <div class="patient-pay-field">
+              <label for="patientPayNotes">Notes</label>
+              <textarea
+                id="patientPayNotes"
+                rows="2"
+                placeholder="Optional payment notes..."
+              ></textarea>
+            </div>
+            <div class="patient-pay-actions">
+              <button
+                type="button"
+                class="secondary-button"
+                id="patientPayCancel"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="primary-button"
+                id="patientPaySubmit"
+                disabled
+              >
+                <i class="fa-solid fa-check"></i>
+                Confirm Payment
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div
+      class="patient-payment-verification-modal"
+      id="patientPaymentVerificationModal"
+      hidden
+    >
+      <div
+        class="patient-payment-verification-overlay"
+        id="patientPaymentVerificationOverlay"
+      ></div>
+      <div class="patient-payment-verification-dialog">
+        <button
+          type="button"
+          class="patient-payment-verification-close"
+          id="patientPaymentVerificationClose"
+          aria-label="Close payment verification"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div
+          class="patient-payment-verification-box"
+          id="patientPaymentVerificationBox"
+        ></div>
+      </div>
+    </div>
+    <script src="../navigation_bar/sidebar.js"></script>
+    <script src="payments.js"></script>
+  </body>
+</html>

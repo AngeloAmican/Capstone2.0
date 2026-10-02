@@ -1,0 +1,113 @@
+<header class="mobile-header">
+  <button
+    class="mobile-menu-toggle"
+    id="mobileMenuToggle"
+    aria-label="Open Navigation Menu"
+  >
+    <i class="fa-solid fa-bars"></i>
+  </button>
+</header>
+<aside class="sidebar" id="sidebar">
+  <button class="toggle-btn" id="sidebarToggle" aria-label="Toggle Navigation">
+    <i class="fa-solid fa-chevron-left" id="toggleIcon"></i>
+  </button>
+  <div class="sidebar-top">
+    <div
+      class="sidebar-staff-profile"
+      id="sidebarProfileTrigger"
+      role="button"
+      tabindex="0"
+      aria-label="Open Doctor Profile"
+      title="Doctor Profile"
+    >
+      <div class="sidebar-staff-avatar">
+        <img
+          id="activeDoctorImage"
+          src=""
+          alt="Doctor profile"
+          style="display: none"
+        />
+        <span id="activeDoctorInitials">DR</span>
+      </div>
+      <div class="sidebar-staff-info">
+        <span class="sidebar-staff-name" id="activeDoctorName">Doctor</span>
+        <span class="sidebar-staff-status">
+          <span class="staff-status-dot"></span>
+          Active now
+        </span>
+      </div>
+    </div>
+    <nav class="sidebar-menu">
+      <a
+        href="../dashboard/dashboard.html"
+        class="menu-item"
+        data-page="dashboard"
+        title="Dashboard"
+      >
+        <i class="fa-solid fa-border-all"></i>
+        <span class="menu-text">Dashboard</span>
+      </a>
+      <a
+        href="../appointment/appointment.html"
+        class="menu-item"
+        data-page="appointment"
+        title="Appointment"
+      >
+        <i class="fa-regular fa-calendar-check"></i>
+        <span class="menu-text">Appointment</span>
+      </a>
+      <a
+        href="../patient/patient.html"
+        class="menu-item"
+        data-page="patients"
+        title="Patients"
+      >
+        <i class="fa-solid fa-user-doctor"></i>
+        <span class="menu-text">Patients</span>
+      </a>
+      <a
+        href="../finance/finance.html"
+        class="menu-item"
+        data-page="finance"
+        title="Finance"
+      >
+        <i class="fa-regular fa-credit-card"></i>
+        <span class="menu-text">Finance</span>
+      </a>
+      <a
+        href="#logout"
+        class="menu-item btn-logout btn-logout-mobile"
+        id="logoutTriggerBtnMobile"
+        title="Logout"
+      >
+        <i class="fa-solid fa-right-from-bracket logout-icon"></i>
+        <span class="logout-text">Logout</span>
+      </a>
+    </nav>
+  </div>
+  <div class="sidebar-footer">
+    <a href="#logout" class="btn-logout" id="logoutTriggerBtn" title="Logout">
+      <i class="fa-solid fa-right-from-bracket logout-icon"></i>
+      <span class="logout-text">Logout</span>
+    </a>
+    <div class="sidebar-footer-divider"></div>
+  </div>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="logout-modal-backdrop" id="logoutModalBackdrop">
+  <div class="logout-modal-card">
+    <div class="logout-modal-icon">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <h3>Ready to Leave?</h3>
+    <p>Are you sure you want to log out of your session?</p>
+    <div class="logout-modal-actions">
+      <button type="button" class="btn-modal-cancel" id="logoutCancelBtn">
+        Cancel
+      </button>
+      <button type="button" class="btn-modal-confirm" id="logoutConfirmBtn">
+        Yes, Log Out
+      </button>
+    </div>
+  </div>
+</div>

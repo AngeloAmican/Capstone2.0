@@ -1,0 +1,150 @@
+<div class="profile-modal-backdrop" id="profileModalBackdrop">
+  <div
+    class="profile-modal-card"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="profileModalName"
+  >
+    <button
+      type="button"
+      class="profile-modal-close"
+      id="profileModalClose"
+      aria-label="Close profile"
+    >
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <div class="profile-top">
+      <div class="profile-top-label">
+        <span class="profile-top-dot"></span>
+        DOCTOR ACCOUNT
+      </div>
+      <h2>Doctor Profile</h2>
+      <p>View your professional profile and account status.</p>
+    </div>
+    <div class="profile-hero">
+      <div class="profile-hero-avatar">
+        <img id="profileModalImage" src="" alt="Doctor profile" />
+        <span id="profileModalInitials">DR</span>
+      </div>
+      <div class="profile-hero-content">
+        <div class="profile-name-row">
+          <h3 id="profileModalName">Doctor</h3>
+          <span class="profile-verified">
+            <i class="fa-solid fa-circle-check"></i>
+          </span>
+        </div>
+        <div class="profile-meta-row">
+          <span class="profile-modal-role" id="profileModalRole">Doctor</span>
+          <span class="profile-status">
+            <span class="profile-status-dot"></span>
+            <span id="profileModalStatus">Active</span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-section-header">
+        <span class="profile-section-title">ACCOUNT INFORMATION</span>
+      </div>
+      <div class="profile-basic-card">
+        <div class="profile-basic-item">
+          <span>Specialization</span>
+          <strong class="profile-detail-view" id="profileModalSpecialization"
+            >General Dentistry</strong
+          >
+          <input
+            type="text"
+            class="profile-specialization-edit"
+            id="profileModalSpecializationInput"
+            list="specializationOptions"
+            autocomplete="off"
+            aria-label="Specialization"
+          />
+          <datalist id="specializationOptions">
+            <option value="General Dentistry"></option>
+            <option value="Orthodontics"></option>
+            <option value="Oral Surgery"></option>
+            <option value="Pediatric Dentistry"></option>
+            <option value="Periodontics"></option>
+            <option value="Prosthodontics"></option>
+            <option value="Endodontics"></option>
+            <option value="Cosmetic Dentistry"></option>
+            <option value="Implant Dentistry"></option>
+          </datalist>
+        </div>
+        <div class="profile-basic-item">
+          <span>Access Level</span>
+          <strong id="profileModalAccessLevel">Doctor</strong>
+        </div>
+        <div class="profile-basic-item">
+          <span>Doctor ID</span>
+          <strong id="profileModalDoctorId">DOC-0001</strong>
+        </div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-section-header">
+        <span class="profile-section-title">CONTACT INFORMATION</span>
+      </div>
+      <div class="profile-contact-card">
+        <div class="profile-contact-row">
+          <div class="profile-contact-icon email-icon">
+            <i class="fa-regular fa-envelope"></i>
+          </div>
+          <div class="profile-contact-content">
+            <span>Email Address</span>
+            <strong class="profile-detail-view" id="profileModalEmail"
+              >No email available</strong
+            >
+          </div>
+        </div>
+        <div class="profile-contact-row">
+          <div class="profile-contact-icon phone-icon">
+            <i class="fa-solid fa-phone"></i>
+          </div>
+          <div class="profile-contact-content">
+            <span>Contact Number</span>
+            <strong class="profile-detail-view" id="profileModalContact"
+              >No contact number available</strong
+            >
+            <input
+              type="text"
+              class="profile-detail-edit"
+              id="profileModalContactInput"
+              autocomplete="tel"
+              inputmode="numeric"
+              maxlength="11"
+              aria-label="Contact Number"
+            />
+            <small
+              class="profile-field-error"
+              id="profileModalContactError"
+            ></small>
+          </div>
+          <button type="button" class="btn-contact-edit" id="profileEditBtn">
+            <i class="fa-regular fa-pen-to-square"></i>
+            Edit
+          </button>
+        </div>
+      </div>
+      <div class="profile-edit-actions">
+        <button type="button" class="btn-profile-cancel" id="profileCancelBtn">
+          Cancel
+        </button>
+        <button type="button" class="btn-profile-save" id="profileSaveBtn">
+          <i class="fa-solid fa-check"></i>
+          Save Changes
+        </button>
+      </div>
+      <div
+        class="profile-save-success"
+        id="profileSaveSuccess"
+        role="status"
+        aria-live="polite"
+      >
+        <i class="fa-solid fa-circle-check"></i>
+        Profile information updated successfully.
+      </div>
+    </div>
+  </div>
+</div>

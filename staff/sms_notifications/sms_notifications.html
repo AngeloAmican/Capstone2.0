@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMS Notifications | DentaNueva Dental Clinic</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="../../navigation_bar/sidebar.css" />
+    <link rel="stylesheet" href="sms_notifications.css" />
+    <link rel="stylesheet" href="../profile/profile.css" />
+  </head>
+
+  <body>
+    <div id="sidebar-container"></div>
+
+    <main class="sms-main">
+      <div class="sms-page">
+        <section class="notification-header-card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <h2>Notification History</h2>
+              <p>View and manage appointment-related SMS notifications.</p>
+            </div>
+
+            <div class="header-right">
+              <div class="record-count">
+                <span id="recordCount">0</span>
+                records
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="notification-card">
+          <div class="filters">
+            <div class="search-wrapper">
+              <span class="search-icon">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Search patient or phone number..."
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="filter-wrapper">
+              <select id="statusFilter">
+                <option value="all">All Status</option>
+                <option value="Sent">Sent</option>
+                <option value="Pending">Pending</option>
+                <option value="Failed">Failed</option>
+              </select>
+            </div>
+
+            <div class="filter-wrapper">
+              <select id="typeFilter">
+                <option value="all">All Notification Types</option>
+                <option value="Appointment Confirmation">
+                  Appointment Confirmation
+                </option>
+                <option value="Appointment Reminder">
+                  Appointment Reminder
+                </option>
+                <option value="Same-Day Reminder">Same-Day Reminder</option>
+                <option value="Appointment Reschedule">
+                  Appointment Reschedule
+                </option>
+                <option value="Appointment Cancellation">
+                  Appointment Cancellation
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="notification-table">
+              <thead>
+                <tr>
+                  <th>PATIENT</th>
+                  <th>PHONE NUMBER</th>
+                  <th>MESSAGE</th>
+                  <th>TYPE</th>
+                  <th>DATE</th>
+                  <th>STATUS</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+
+              <tbody id="notificationTableBody"></tbody>
+            </table>
+
+            <div class="empty-state" id="emptyState">
+              <div class="empty-icon">
+                <i class="fa-regular fa-message"></i>
+              </div>
+
+              <h3>No notifications found</h3>
+
+              <p>
+                There are no SMS notifications matching your current filters.
+              </p>
+            </div>
+          </div>
+
+          <div class="pagination-bar" id="paginationBar" style="display: none">
+            <div class="pagination-summary" id="paginationSummary">
+              Showing 1–10 of 0 notifications
+            </div>
+
+            <div class="pagination-controls">
+              <button
+                type="button"
+                class="pagination-button"
+                id="prevPageBtn"
+                disabled
+              >
+                <i class="fa-solid fa-chevron-left"></i>
+                <span>Previous</span>
+              </button>
+
+              <span class="pagination-page-info" id="paginationPageInfo">
+                Page 1 of 1
+              </span>
+
+              <button
+                type="button"
+                class="pagination-button"
+                id="nextPageBtn"
+                disabled
+              >
+                <span>Next</span>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div class="modal-overlay" id="viewModal">
+      <div class="modal view-modal">
+        <div class="modal-header">
+          <div class="modal-header-content">
+            <span class="modal-label"> NOTIFICATION DETAILS </span>
+
+            <h2>Notification Information</h2>
+
+            <p>View the selected SMS notification record.</p>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeViewModalBtn"
+            type="button"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="details-container" id="notificationDetails"></div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="closeDetailsBtn">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteModal">
+      <div class="modal delete-modal">
+        <div class="delete-icon">
+          <i class="fa-solid fa-trash"></i>
+        </div>
+
+        <h2>Delete Notification?</h2>
+
+        <p>
+          This notification record will be permanently removed.
+        </p>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">
+            Cancel
+          </button>
+
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">
+      <span id="toastIcon">
+        <i class="fa-solid fa-check"></i>
+      </span>
+
+      <span id="toastMessage"> Notification updated. </span>
+    </div>
+
+    <script src="sms_notifications.js"></script>
+    <script src="../../navigation_bar/sidebar.js"></script>
+    <script src="../profile/profile.js"></script>
+  </body>
+</html>

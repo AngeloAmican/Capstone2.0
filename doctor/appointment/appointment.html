@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DentaNueva - Patient Appointments</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../navigationbar/sidebar.css" />
+    <link rel="stylesheet" href="../profile/profile.css" />
+    <link rel="stylesheet" href="appointment.css" />
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <aside id="sidebar-container"></aside>
+      <main class="main-content">
+        <header class="topbar">
+          <div class="topbar-left">
+            <div class="page-heading-block">
+              <h1 class="page-title">Appointments</h1>
+              <p class="page-description">
+                Manage and organize patient appointments and daily schedules.
+              </p>
+            </div>
+          </div>
+          <div class="topbar-right-actions">
+            <div class="search-box-wrapper">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input
+                type="text"
+                id="searchInput"
+                class="patient-search-input"
+                placeholder="Search patient name..."
+                autocomplete="off"
+              />
+            </div>
+          </div>
+        </header>
+        <div class="appointments-layout">
+          <section class="panel schedule-panel">
+            <div class="schedule-main-header">
+              <div class="schedule-heading">
+                <span class="panel-eyebrow">DAILY SCHEDULE</span>
+                <div class="schedule-title-row">
+                  <h3 id="scheduleTitle">Today's Appointments</h3>
+                  <span
+                    id="scheduleDateLabel"
+                    class="schedule-date-label"
+                  ></span>
+                </div>
+              </div>
+            </div>
+            <div class="time-slots-container" id="timeline"></div>
+          </section>
+          <div class="right-col-stack">
+            <section class="panel calendar-panel">
+              <div class="calendar-header">
+                <div class="calendar-heading">
+                  <span class="panel-eyebrow">CALENDAR</span>
+                  <h4 id="calMonthLabel">—</h4>
+                </div>
+                <div class="calendar-nav-btns">
+                  <button
+                    type="button"
+                    onclick="shiftMonth(-1)"
+                    aria-label="Previous month"
+                  >
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <button
+                    type="button"
+                    onclick="shiftMonth(1)"
+                    aria-label="Next month"
+                  >
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="calendar-grid-days" id="calGrid"></div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="modal-overlay" id="overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <div>
+            <h3 id="modalTitle">Appointment Details</h3>
+            <span id="modalSubtitle" class="modal-subtitle"></span>
+          </div>
+          <button type="button" id="viewPatientRecordBtn" class="primary-btn">
+            <i class="fa-solid fa-user"></i>
+            View Patient Record
+          </button>
+          <button
+            class="modal-close-icon"
+            type="button"
+            onclick="closeModal()"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="f_patient">Patient Name</label>
+            <input type="text" id="f_patient" class="form-control" disabled />
+          </div>
+          <div class="form-row-inline">
+            <div class="form-group">
+              <label for="f_date">Date</label>
+              <input type="date" id="f_date" class="form-control" disabled />
+            </div>
+            <div class="form-group">
+              <label for="f_time">Time</label>
+              <input type="time" id="f_time" class="form-control" disabled />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="f_type">Service Type</label>
+            <input type="text" id="f_type" class="form-control" disabled />
+          </div>
+          <div class="form-group">
+            <label for="f_duration">Duration</label>
+            <div class="duration-input-wrapper">
+              <input
+                type="number"
+                id="f_duration"
+                class="form-control"
+                disabled
+              />
+              <span class="duration-unit">minutes</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Appointment Status</label>
+            <div id="modalStatus" class="modal-status">Scheduled</div>
+          </div>
+          <div id="appointmentNotice" class="view-only-notice show">
+            <i class="fa-solid fa-circle-info"></i>
+            <div>
+              <strong>Patient appointment</strong>
+              <span
+                >This appointment was received from the patient appointment
+                system.</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <div></div>
+          <div class="modal-right-actions">
+            <button class="btn-cancel" type="button" onclick="closeModal()">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="status-confirm-overlay" id="statusConfirmOverlay">
+      <div class="status-confirm-box">
+        <div class="status-confirm-icon" id="statusConfirmIcon">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h3 id="statusConfirmTitle">Confirm Appointment</h3>
+        <p id="statusConfirmMessage">Are you sure you want to continue?</p>
+        <div class="status-confirm-actions">
+          <button
+            type="button"
+            class="status-cancel-btn"
+            onclick="closeStatusConfirmation()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="status-confirm-btn"
+            id="statusConfirmButton"
+            onclick="confirmStatusAction()"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script src="../../shared/appointment_database.js"></script>
+    <script src="../navigationbar/sidebar.js"></script>
+    <script src="../profile/profile.js"></script>
+    <script src="appointment.js"></script>
+  </body>
+</html>

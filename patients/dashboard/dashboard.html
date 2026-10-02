@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patient Dashboard | DentaNueva Dental Clinic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../navigation_bar/sidebar.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <div class="dashboard-layout">
+      <aside id="sidebar-container"></aside>
+      <main class="main-content">
+        <header class="dash-header">
+          <div class="page-heading">
+            <h1 class="dashboard-title" id="welcomeTitle">
+              Good day, Patient!
+            </h1>
+            <p class="dashboard-subtitle">
+              Here's an overview of your dental care.
+            </p>
+          </div>
+          <div class="dash-header-right">
+            <div class="header-action-row">
+              <div class="header-quick-actions">
+                <button
+                  type="button"
+                  class="qa-btn-pill primary-action"
+                  id="dashboardNewAppointmentBtn"
+                >
+                  <i class="fa-solid fa-calendar-plus"></i>
+                  <span>New Appointment</span>
+                </button>
+              </div>
+              <div class="datetime-pill-widget">
+                <div class="datetime-pill-content">
+                  <div class="datetime-icon-wrap">
+                    <i class="fa-regular fa-clock"></i>
+                  </div>
+                  <div class="datetime-text-group">
+                    <span id="currentDate">Loading date...</span>
+                    <span class="datetime-dot">•</span>
+                    <span id="currentTime">--:-- --</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <section class="stats-grid">
+          <div class="stat-card" id="nextAppointmentCard">
+            <div class="stat-icon stat-icon-green">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <div class="stat-body">
+              <span class="stat-label">Next Appointment</span>
+              <span class="stat-value" id="statNextAppointment">None</span>
+              <span class="stat-trend" id="statNextAppointmentInfo"
+                >No upcoming appointment</span
+              >
+            </div>
+          </div>
+          <div class="stat-card" id="currentBalanceCard">
+            <div class="stat-icon stat-icon-amber">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div class="stat-body">
+              <span class="stat-label">Current Balance</span>
+              <span class="stat-value" id="statBalance">₱0.00</span>
+              <span class="stat-trend" id="statBalanceInfo"
+                >No outstanding balance</span
+              >
+            </div>
+          </div>
+          <div class="stat-card" id="medicalRecordCard">
+            <div class="stat-icon stat-icon-purple">
+              <i class="fa-solid fa-file-medical"></i>
+            </div>
+            <div class="stat-body">
+              <span class="stat-label">Medical Record</span>
+              <span class="stat-value" id="statMedicalRecord">Incomplete</span>
+              <span class="stat-trend" id="statMedicalRecordInfo"
+                >Medical form needs to be completed</span
+              >
+            </div>
+          </div>
+        </section>
+        <section class="two-col-grid">
+          <section class="panel appointments-panel">
+            <div class="panel-header">
+              <div class="panel-heading">
+                <h3 title="Today's Appointments">Today's Appointments</h3>
+                <p class="panel-subtitle" title="Today's scheduled patients">
+                  Today's scheduled patients
+                </p>
+              </div>
+            </div>
+            <div
+              class="panel-body appointments-panel-body"
+              id="appointmentsList"
+            ></div>
+          </section>
+          <section class="panel appointment-summary-panel">
+            <div class="panel-header">
+              <div class="panel-heading">
+                <h3 title="Appointment Summary">Appointment Summary</h3>
+                <p
+                  class="panel-subtitle"
+                  title="Your appointment activity at DentaNueva"
+                >
+                  Your appointment activity at DentaNueva
+                </p>
+              </div>
+              <details class="appointment-info">
+                <summary
+                  aria-label="View appointment guidelines"
+                  title="Appointment guidelines"
+                >
+                  <i class="fa-solid fa-circle-info"></i>
+                </summary>
+                <div class="appointment-info-popover">
+                  <strong>Appointment Guidelines</strong>
+                  <p>
+                    <i class="fa-solid fa-circle-check"></i> Attend your
+                    appointment to have it marked Completed.
+                  </p>
+                  <p>
+                    <i class="fa-solid fa-calendar-xmark"></i> Cancel or
+                    reschedule in advance. These do not automatically restrict
+                    booking.
+                  </p>
+                  <p>
+                    <i class="fa-solid fa-triangle-exclamation"></i> Two No
+                    Shows give a warning.
+                  </p>
+                  <p>
+                    <i class="fa-solid fa-lock"></i> A third No Show restricts
+                    new booking for 2 days.
+                  </p>
+                  <small
+                    >During a restriction, your records, payments, history, and
+                    portal access remain available.</small
+                  >
+                </div>
+              </details>
+            </div>
+            <div class="panel-body appointment-summary-body">
+              <div class="appointment-summary-grid">
+                <div
+                  class="appointment-summary-stat total"
+                  id="summaryTotalCard"
+                >
+                  <div class="summary-stat-top">
+                    <span class="summary-stat-icon">
+                      <i class="fa-solid fa-calendar-days"></i>
+                    </span>
+                    <span class="summary-stat-label">Total Appointments</span>
+                  </div>
+                  <strong id="summaryTotalAppointments">0</strong>
+                </div>
+                <div
+                  class="appointment-summary-stat completed"
+                  id="summaryCompletedCard"
+                >
+                  <div class="summary-stat-top">
+                    <span class="summary-stat-icon">
+                      <i class="fa-solid fa-circle-check"></i>
+                    </span>
+                    <span class="summary-stat-label">Completed</span>
+                  </div>
+                  <strong id="summaryCompletedAppointments">0</strong>
+                </div>
+                <div
+                  class="appointment-summary-stat scheduled"
+                  id="summaryScheduledCard"
+                >
+                  <div class="summary-stat-top">
+                    <span class="summary-stat-icon">
+                      <i class="fa-regular fa-clock"></i>
+                    </span>
+                    <span class="summary-stat-label">Scheduled</span>
+                  </div>
+                  <strong id="summaryScheduledAppointments">0</strong>
+                </div>
+                <div
+                  class="appointment-summary-stat rescheduled"
+                  id="summaryRescheduledCard"
+                >
+                  <div class="summary-stat-top">
+                    <span class="summary-stat-icon">
+                      <i class="fa-solid fa-rotate"></i>
+                    </span>
+                    <span class="summary-stat-label">Rescheduled</span>
+                  </div>
+                  <strong id="summaryRescheduledAppointments">0</strong>
+                </div>
+                <div
+                  class="appointment-summary-stat cancelled"
+                  id="summaryCancelledCard"
+                >
+                  <div class="summary-stat-top">
+                    <span class="summary-stat-icon">
+                      <i class="fa-solid fa-circle-xmark"></i>
+                    </span>
+                    <span class="summary-stat-label">Cancelled</span>
+                  </div>
+                  <strong id="summaryCancelledAppointments">0</strong>
+                </div>
+                <div
+                  class="appointment-summary-stat no-show"
+                  id="summaryNoShowCard"
+                >
+                  <div class="summary-stat-top">
+                    <span class="summary-stat-icon">
+                      <i class="fa-solid fa-user-slash"></i>
+                    </span>
+                    <span class="summary-stat-label">No Show</span>
+                  </div>
+                  <strong id="summaryNoShowAppointments">0</strong>
+                </div>
+              </div>
+              <div
+                class="appointment-behavior-status"
+                id="appointmentBehaviorStatus"
+              >
+                <div class="appointment-behavior-heading">
+                  <span class="summary-stat-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                  </span>
+                  <div>
+                    <strong id="appointmentBehaviorLabel"
+                      >Attendance Pattern</strong
+                    >
+                    <p id="appointmentBehaviorMessage">
+                      No appointment activity recorded yet.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="appointment-restriction-details"
+                  id="appointmentRestrictionDetails"
+                  hidden
+                ></div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="../../shared/appointment_behavior.js"></script>
+    <script src="../navigation_bar/sidebar.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>

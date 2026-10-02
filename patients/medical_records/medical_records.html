@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medical Records | DentaNueva Dental Clinic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../navigation_bar/sidebar.css" />
+    <link rel="stylesheet" href="medical_records.css" />
+  </head>
+  <body>
+    <div class="medical-records-layout">
+      <aside id="sidebar-container"></aside>
+      <main class="medical-records-main">
+        <div class="medical-records-content">
+          <header class="medical-records-header">
+            <div class="medical-records-heading">
+              <h1>Medical Records</h1>
+              <p>View and manage your medical and dental information.</p>
+            </div>
+            <div class="medical-records-header-actions">
+              <button
+                type="button"
+                class="start-record-btn"
+                id="startRecordBtn"
+              >
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span id="startRecordBtnText">Complete Medical Record</span>
+              </button>
+            </div>
+          </header>
+          <section class="record-profile-card">
+            <div class="record-profile-top">
+              <div class="record-profile-avatar" id="profileAvatar">PT</div>
+              <div class="record-profile-identity">
+                <span class="profile-label">PATIENT PROFILE</span>
+                <h2 id="profileName">Patient</h2>
+                <p id="profilePatientId">Patient ID: —</p>
+              </div>
+              <div class="profile-info-actions">
+                <div class="medical-info-tooltip profile-info-tooltip">
+                  <button
+                    type="button"
+                    class="medical-info-trigger"
+                    aria-label="Why do I need to complete this?"
+                  >
+                    <i class="fa-solid fa-circle-info"></i>
+                  </button>
+                  <div class="medical-info-tooltip-content">
+                    <strong>Why do I need to complete this?</strong>
+                    <span
+                      >Your medical and dental information helps the clinic
+                      staff prepare for your visit. Please provide accurate
+                      information. Your answers will be available to the dentist
+                      for assessment.</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="record-profile-details">
+              <div class="profile-detail">
+                <span class="detail-label">Email</span>
+                <strong id="profileEmail">—</strong>
+              </div>
+              <div class="profile-detail">
+                <span class="detail-label">Phone</span>
+                <strong id="profilePhone">—</strong>
+              </div>
+              <div class="profile-detail">
+                <span class="detail-label">Date of Birth</span>
+                <strong id="profileBirthDate">—</strong>
+              </div>
+              <div class="profile-detail">
+                <span class="detail-label">Gender</span>
+                <strong id="profileGender">—</strong>
+              </div>
+            </div>
+          </section>
+          <section class="record-progress-card">
+            <div class="progress-card-heading">
+              <div>
+                <h2>Medical Records</h2>
+                <p id="recordDescription">
+                  Your medical record has not been completed yet.
+                </p>
+              </div>
+              <div class="progress-percentage" id="progressPercentage">
+                Incomplete
+              </div>
+            </div>
+            <div class="overall-progress">
+              <div class="overall-progress-track">
+                <div
+                  class="overall-progress-fill"
+                  id="overallProgressFill"
+                ></div>
+              </div>
+            </div>
+            <div class="record-checklist">
+              <div class="record-check-item" id="checkProfile">
+                <div class="check-icon">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+                <div>
+                  <strong>Personal Information</strong>
+                  <span>Basic patient information</span>
+                </div>
+                <i class="fa-solid fa-circle-check check-complete"></i>
+              </div>
+              <div class="record-check-item" id="checkDentalConcern">
+                <div class="check-icon">
+                  <i class="fa-solid fa-tooth"></i>
+                </div>
+                <div>
+                  <strong>Dental Concern</strong>
+                  <span>Reason for your dental visit</span>
+                </div>
+                <i class="fa-solid fa-circle-check check-complete"></i>
+              </div>
+              <div class="record-check-item" id="checkDentalHistory">
+                <div class="check-icon">
+                  <i class="fa-solid fa-notes-medical"></i>
+                </div>
+                <div>
+                  <strong>Dental History</strong>
+                  <span>Previous dental visits and medications</span>
+                </div>
+                <i class="fa-solid fa-circle-check check-complete"></i>
+              </div>
+              <div class="record-check-item" id="checkMedicalHistory">
+                <div class="check-icon">
+                  <i class="fa-solid fa-briefcase-medical"></i>
+                </div>
+                <div>
+                  <strong>Medical &amp; Allergies</strong>
+                  <span>Medical conditions and allergies</span>
+                </div>
+                <i class="fa-solid fa-circle-check check-complete"></i>
+              </div>
+              <div class="record-check-item" id="checkConsent">
+                <div class="check-icon">
+                  <i class="fa-solid fa-signature"></i>
+                </div>
+                <div>
+                  <strong>Consent</strong>
+                  <span>Confirmation of provided information</span>
+                </div>
+                <i class="fa-solid fa-circle-check check-complete"></i>
+              </div>
+            </div>
+          </section>
+          <section class="patient-record-page" id="patientRecordPage">
+            <div class="patient-record-navigation">
+              <div class="patient-record-label">
+                <span class="record-page-eyebrow">PATIENT RECORD</span>
+              </div>
+              <div class="patient-record-tabs" role="tablist">
+                <button
+                  type="button"
+                  class="patient-record-tab active"
+                  data-tab="overview"
+                  role="tab"
+                  aria-selected="true"
+                >
+                  <i class="fa-solid fa-user"></i>
+                  <span>Overview</span>
+                </button>
+                <button
+                  type="button"
+                  class="patient-record-tab"
+                  data-tab="medical"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  <i class="fa-solid fa-notes-medical"></i>
+                  <span>Medical Record</span>
+                </button>
+                <button
+                  type="button"
+                  class="patient-record-tab"
+                  data-tab="dental"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  <i class="fa-solid fa-tooth"></i>
+                  <span>Dental Chart</span>
+                </button>
+                <button
+                  type="button"
+                  class="patient-record-tab"
+                  data-tab="images"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  <i class="fa-solid fa-images"></i>
+                  <span>Clinical Images</span>
+                </button>
+                <button
+                  type="button"
+                  class="patient-record-tab"
+                  data-tab="treatments"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  <i class="fa-solid fa-syringe"></i>
+                  <span>Treatments</span>
+                </button>
+                <button
+                  type="button"
+                  class="patient-record-tab"
+                  data-tab="appointments"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  <i class="fa-solid fa-calendar-check"></i>
+                  <span>Appointments</span>
+                </button>
+              </div>
+            </div>
+            <div class="patient-record-panels">
+              <section
+                class="patient-record-panel active"
+                id="patientPageOverview"
+                data-panel="overview"
+              ></section>
+              <section
+                class="patient-record-panel"
+                id="patientPageMedical"
+                data-panel="medical"
+                hidden
+              ></section>
+              <section
+                class="patient-record-panel"
+                id="patientPageDental"
+                data-panel="dental"
+                hidden
+              ></section>
+              <section
+                class="patient-record-panel"
+                id="patientPageImages"
+                data-panel="images"
+                hidden
+              ></section>
+              <section
+                class="patient-record-panel"
+                id="patientPageTreatments"
+                data-panel="treatments"
+                hidden
+              ></section>
+              <section
+                class="patient-record-panel"
+                id="patientPageAppointments"
+                data-panel="appointments"
+                hidden
+              ></section>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <div
+      class="medical-modal-backdrop"
+      id="medicalModalBackdrop"
+      aria-hidden="true"
+    >
+      <div
+        class="medical-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="medicalModalTitle"
+      >
+        <div class="medical-modal-header">
+          <div>
+            <span class="modal-eyebrow">MEDICAL &amp; DENTAL HISTORY</span>
+            <h2 id="medicalModalTitle">Complete Medical Record</h2>
+            <p id="medicalModalSubtitle">
+              Please provide accurate information.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="closeMedicalModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="medical-progress">
+          <div class="medical-progress-track">
+            <div class="medical-progress-fill" id="medicalProgressFill"></div>
+          </div>
+          <div class="medical-progress-steps">
+            <span class="medical-progress-step active" data-step="1">
+              <i class="fa-solid fa-user"></i>
+              <em>Patient</em>
+            </span>
+            <span class="medical-progress-step" data-step="2">
+              <i class="fa-solid fa-tooth"></i>
+              <em>Dental Concern</em>
+            </span>
+            <span class="medical-progress-step" data-step="3">
+              <i class="fa-solid fa-notes-medical"></i>
+              <em>Dental History</em>
+            </span>
+            <span class="medical-progress-step" data-step="4">
+              <i class="fa-solid fa-briefcase-medical"></i>
+              <em>Medical &amp; Allergies</em>
+            </span>
+            <span class="medical-progress-step" data-step="5">
+              <i class="fa-solid fa-signature"></i>
+              <em>Consent</em>
+            </span>
+          </div>
+        </div>
+        <form id="medicalRecordForm" autocomplete="off">
+          <input type="hidden" id="recordPatientId" name="recordPatientId" />
+          <div class="medical-step-viewport" id="medicalStepViewport">
+            <div class="medical-step active" data-step="1">
+              <section class="medical-section">
+                <div class="medical-section-heading">
+                  <div>
+                    <h3>Personal Information</h3>
+                    <p>
+                      Please make sure your personal information is complete and
+                      correct.
+                    </p>
+                  </div>
+                  <span class="patient-info-badge">
+                    <i class="fa-solid fa-user"></i>
+                    Patient Information
+                  </span>
+                </div>
+                <div class="medical-grid">
+                  <div class="form-field">
+                    <label for="firstName">First Name</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      placeholder="Enter first name"
+                      required
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label for="lastName">Last Name</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      placeholder="Enter last name"
+                      required
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input
+                      type="date"
+                      id="dateOfBirth"
+                      name="dateOfBirth"
+                      required
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" required>
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label for="phone">Phone Number</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      placeholder="09XXXXXXXXX"
+                      inputmode="numeric"
+                      maxlength="11"
+                      minlength="11"
+                      pattern="09[0-9]{9}"
+                      required
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label for="email">Email</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      placeholder="patient@example.com"
+                      required
+                    />
+                  </div>
+                  <div class="form-field full-field">
+                    <label for="address">Complete Address</label>
+                    <input
+                      type="text"
+                      id="address"
+                      name="address"
+                      placeholder="Enter complete address"
+                      required
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label for="emergencyName">Emergency Contact Name</label>
+                    <input
+                      type="text"
+                      id="emergencyName"
+                      name="emergencyName"
+                      placeholder="Full name"
+                      required
+                    />
+                  </div>
+                  <div class="form-field">
+                    <label for="emergencyContact">Emergency Contact No.</label>
+                    <input
+                      type="tel"
+                      id="emergencyContact"
+                      name="emergencyContact"
+                      placeholder="09XXXXXXXXX"
+                      inputmode="numeric"
+                      maxlength="11"
+                      minlength="11"
+                      pattern="09[0-9]{9}"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="medical-note">
+                  <i class="fa-solid fa-circle-info"></i>
+                  <span
+                    >This information will be shared with your appointment and
+                    clinic records so the staff can identify your patient
+                    record.</span
+                  >
+                </div>
+              </section>
+            </div>
+            <div class="medical-step" data-step="2">
+              <section class="medical-section">
+                <h3>Dental Concern</h3>
+                <p class="medical-subtext">
+                  Please select the reason or reasons for your dental visit.
+                </p>
+                <div class="checkbox-grid">
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Toothache"
+                    />
+                    <span>Toothache</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Dentures"
+                    />
+                    <span>Dentures</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Cleaning"
+                    />
+                    <span>Cleaning</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Whitening"
+                    />
+                    <span>Whitening</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Filling"
+                    />
+                    <span>Filling</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Tooth Extraction"
+                    />
+                    <span>Tooth Extraction</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="dentalConcern"
+                      value="Braces Consultation"
+                    />
+                    <span>Braces Consultation</span>
+                  </label>
+                  <label class="medical-checkbox other-checkbox">
+                    <input type="checkbox" id="dentalConcernOtherCheck" />
+                    <span>Others</span>
+                    <input
+                      type="text"
+                      id="dentalConcernOther"
+                      class="inline-input"
+                      placeholder="Specify"
+                    />
+                  </label>
+                </div>
+                <div class="question-block">
+                  <p class="question">
+                    Have you ever had a negative experience during dental
+                    treatment?
+                  </p>
+                  <div class="radio-row">
+                    <label class="medical-radio">
+                      <input
+                        type="radio"
+                        name="negativeExperience"
+                        value="Yes"
+                      />
+                      Yes
+                    </label>
+                    <label class="medical-radio">
+                      <input
+                        type="radio"
+                        name="negativeExperience"
+                        value="No"
+                        checked
+                      />
+                      No
+                    </label>
+                  </div>
+                </div>
+                <div class="form-field">
+                  <label for="negativeExperienceNote"
+                    >If yes, please explain</label
+                  >
+                  <textarea
+                    id="negativeExperienceNote"
+                    name="negativeExperienceNote"
+                    rows="4"
+                    placeholder="Explain briefly"
+                  ></textarea>
+                </div>
+              </section>
+            </div>
+            <div class="medical-step" data-step="3">
+              <section class="medical-section">
+                <h3>Dental History</h3>
+                <div class="form-field">
+                  <label for="lastDentalVisit">Date of Last Dental Visit</label>
+                  <input type="date" id="lastDentalVisit" name="medLastVisit" />
+                </div>
+                <div class="form-field">
+                  <label for="lastDentalTreatment"
+                    >What treatment was received during the last visit?</label
+                  >
+                  <textarea
+                    id="lastDentalTreatment"
+                    name="medLastTreatment"
+                    rows="4"
+                    placeholder="Describe the treatment"
+                  ></textarea>
+                </div>
+              </section>
+              <section class="medical-section">
+                <h3>Current Medications</h3>
+                <p class="question">
+                  Are you currently taking any medications or supplements?
+                </p>
+                <div class="radio-row">
+                  <label class="medical-radio">
+                    <input type="radio" name="currentMedications" value="Yes" />
+                    Yes
+                  </label>
+                  <label class="medical-radio">
+                    <input
+                      type="radio"
+                      name="currentMedications"
+                      value="No"
+                      checked
+                    />
+                    No
+                  </label>
+                </div>
+                <div class="form-field">
+                  <label for="medicationList">If yes, please list them</label>
+                  <textarea
+                    id="medicationList"
+                    name="currentMedicationsList"
+                    rows="4"
+                    placeholder="List medications or supplements"
+                  ></textarea>
+                </div>
+              </section>
+            </div>
+            <div class="medical-step" data-step="4">
+              <section class="medical-section">
+                <h3>Medical History</h3>
+                <p class="medical-subtext">
+                  Please select any condition that applies to you.
+                </p>
+                <div class="checkbox-list">
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="High Blood Pressure (Hypertension)"
+                    />
+                    <span>High Blood Pressure (Hypertension)</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Diabetes"
+                    />
+                    <span>Diabetes</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Asthma"
+                    />
+                    <span>Asthma</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Heart Disease"
+                    />
+                    <span>Heart Disease</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Epilepsy/Seizures"
+                    />
+                    <span>Epilepsy / Seizures</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="medicalHistory"
+                      value="Hepatitis"
+                    />
+                    <span>Hepatitis</span>
+                  </label>
+                  <label class="medical-checkbox other-checkbox">
+                    <input type="checkbox" id="medicalOtherCheck" />
+                    <span>Other Medical Condition</span>
+                    <input
+                      type="text"
+                      id="medicalOther"
+                      class="inline-input"
+                      placeholder="Specify"
+                    />
+                  </label>
+                </div>
+              </section>
+              <section class="medical-section">
+                <h3>Allergies</h3>
+                <p class="medical-subtext">Please select any known allergy.</p>
+                <div class="checkbox-list">
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="Penicillin"
+                    />
+                    <span>Penicillin</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="Local Anesthetic"
+                    />
+                    <span>Local Anesthetic</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input type="checkbox" name="allergies" value="Latex" />
+                    <span>Latex</span>
+                  </label>
+                  <label class="medical-checkbox">
+                    <input type="checkbox" name="allergies" value="Food" />
+                    <span>Food</span>
+                  </label>
+                  <label class="medical-checkbox other-checkbox">
+                    <input type="checkbox" id="allergyOtherCheck" />
+                    <span>Other Allergy</span>
+                    <input
+                      type="text"
+                      id="allergyOther"
+                      class="inline-input"
+                      placeholder="Specify"
+                    />
+                  </label>
+                  <label class="medical-checkbox">
+                    <input
+                      type="checkbox"
+                      name="allergies"
+                      value="No Known Allergies"
+                    />
+                    <span>No Known Allergies</span>
+                  </label>
+                </div>
+              </section>
+            </div>
+            <div class="medical-step" data-step="5">
+              <section class="medical-section">
+                <div class="review-heading">
+                  <div>
+                    <h3>Review &amp; Consent</h3>
+                    <p class="medical-subtext">
+                      Please review your information carefully before saving.
+                    </p>
+                  </div>
+                  <span class="review-badge">
+                    <i class="fa-solid fa-eye"></i>
+                    Review
+                  </span>
+                </div>
+                <div class="review-container" id="medicalReview"></div>
+              </section>
+              <div class="consent-box">
+                <label class="consent-label">
+                  <input type="checkbox" id="consentCheckbox" required />
+                  <span
+                    >I confirm that the information I provided is accurate and
+                    complete. I understand that the information will be used by
+                    DentaNueva Dental Clinic to support my dental care and
+                    assessment.</span
+                  >
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="medical-modal-actions">
+            <button type="button" class="secondary-btn" id="cancelMedicalBtn">
+              Cancel
+            </button>
+            <div class="step-navigation">
+              <button
+                type="button"
+                class="secondary-btn"
+                id="backMedicalBtn"
+                hidden
+              >
+                <i class="fa-solid fa-arrow-left"></i>
+                Back
+              </button>
+              <button type="button" class="primary-btn" id="nextMedicalBtn">
+                Next
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+              <button
+                type="submit"
+                class="primary-btn"
+                id="saveMedicalBtn"
+                hidden
+              >
+                <i class="fa-solid fa-check"></i>
+                Save Medical Record
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      class="profile-edit-modal-backdrop"
+      id="profileEditModalBackdrop"
+      aria-hidden="true"
+    >
+      <div
+        class="profile-edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profileEditModalTitle"
+      >
+        <div class="profile-edit-modal-header">
+          <div>
+            <span class="modal-eyebrow">PATIENT RECORD</span>
+            <h2 id="profileEditModalTitle">Edit Patient</h2>
+            <p>Update your personal information.</p>
+          </div>
+          <button
+            type="button"
+            class="modal-close-btn"
+            id="closeProfileEditModal"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="profileEditForm" autocomplete="off">
+          <div class="profile-edit-modal-body">
+            <div class="medical-grid">
+              <div class="form-field">
+                <label for="editFirstName">First Name</label>
+                <input type="text" id="editFirstName" required />
+              </div>
+              <div class="form-field">
+                <label for="editLastName">Last Name</label>
+                <input type="text" id="editLastName" required />
+              </div>
+              <div class="form-field">
+                <label for="editDateOfBirth">Date of Birth</label>
+                <input type="date" id="editDateOfBirth" required />
+              </div>
+              <div class="form-field">
+                <label for="editGender">Gender</label>
+                <select id="editGender" required>
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="editPhone">Phone Number</label>
+                <input
+                  type="tel"
+                  id="editPhone"
+                  inputmode="numeric"
+                  maxlength="11"
+                  minlength="11"
+                  pattern="09[0-9]{9}"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label for="editEmail">Email</label>
+                <input type="email" id="editEmail" required />
+              </div>
+              <div class="form-field full-field">
+                <label for="editAddress">Complete Address</label>
+                <input type="text" id="editAddress" required />
+              </div>
+              <div class="form-field">
+                <label for="editEmergencyName">Emergency Contact Name</label>
+                <input type="text" id="editEmergencyName" required />
+              </div>
+              <div class="form-field">
+                <label for="editEmergencyContact">Emergency Contact No.</label>
+                <input
+                  type="tel"
+                  id="editEmergencyContact"
+                  inputmode="numeric"
+                  maxlength="11"
+                  minlength="11"
+                  pattern="09[0-9]{9}"
+                  required
+                />
+              </div>
+            </div>
+            <div class="medical-note">
+              <i class="fa-solid fa-circle-info"></i>
+              <span
+                >Your updated information will be shared with your appointment
+                and clinic records.</span
+              >
+            </div>
+          </div>
+          <div class="profile-edit-modal-actions">
+            <button type="button" class="secondary-btn" id="cancelProfileEdit">
+              Cancel
+            </button>
+            <button type="submit" class="primary-btn">
+              <i class="fa-solid fa-check"></i>
+              Save Patient
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      class="success-modal-backdrop"
+      id="successModalBackdrop"
+      aria-hidden="true"
+    >
+      <div class="success-modal">
+        <div class="success-icon">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <h2>Medical Record Saved</h2>
+        <p>
+          Your medical and dental information has been saved successfully. The
+          clinic staff and dentist can now review your submitted information.
+        </p>
+        <button
+          type="button"
+          class="primary-btn success-close-btn"
+          id="successCloseBtn"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+    <script src="../navigation_bar/sidebar.js"></script>
+    <script src="medical_records.js"></script>
+  </body>
+</html>
