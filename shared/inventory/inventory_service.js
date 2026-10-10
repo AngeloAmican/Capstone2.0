@@ -124,7 +124,11 @@
   }
 
   function getPatientName(patient) {
-    const fullName = [patient?.firstName, patient?.middleName, patient?.lastName]
+    const fullName = [
+      patient?.firstName,
+      patient?.middleName,
+      patient?.lastName,
+    ]
       .filter(Boolean)
       .join(" ");
 
@@ -173,7 +177,11 @@
     window.dispatchEvent(new CustomEvent("inventory:notification-created"));
   }
 
-  async function recordTreatmentDeduction(treatment, patient, requestedMaterials) {
+  async function recordTreatmentDeduction(
+    treatment,
+    patient,
+    requestedMaterials,
+  ) {
     try {
       const response = await fetch(API_ENDPOINT, {
         method: "POST",
@@ -201,12 +209,19 @@
       const movements = Array.isArray(result?.data?.movements)
         ? result.data.movements
         : [];
-      const unresolvedMaterials = Array.isArray(result?.data?.unresolvedMaterials)
+      const unresolvedMaterials = Array.isArray(
+        result?.data?.unresolvedMaterials,
+      )
         ? result.data.unresolvedMaterials
         : [];
 
       if (movements.length || unresolvedMaterials.length) {
-        saveTreatmentNotification(treatment, patient, movements, unresolvedMaterials);
+        saveTreatmentNotification(
+          treatment,
+          patient,
+          movements,
+          unresolvedMaterials,
+        );
       }
 
       cachedItems = [];

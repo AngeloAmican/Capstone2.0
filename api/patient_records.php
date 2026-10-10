@@ -1,47 +1,84 @@
 <?php
 declare(strict_types=1);
-
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
-
 require_once __DIR__ . '/../php/db_connect.php';
-
 function jsonResponse(bool $success, string $message = '', $data = null, int $status = 200): void
 {
     http_response_code($status);
     echo json_encode(['success' => $success, 'message' => $message, 'data' => $data], JSON_UNESCAPED_UNICODE);
     exit;
 }
-
 if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
     jsonResponse(false, 'Authentication required.', null, 401);
 }
-
 $role = strtolower(trim((string) ($_SESSION['role'] ?? '')));
 $userId = (int) $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];
 $requestedPatientId = trim((string) ($_GET['patient_id'] ?? $_POST['patient_id'] ?? ''));
-
-function ensurePatient(mysqli $conn, string $patientId, int $userId, string $role): void
+function getRegisteredPatientId(mysqli $conn, int $userId): string
 {
-    if ($role === 'user') {
-        $patientId = trim((string) ($_SESSION['patient_id'] ?? $patientId));
-        if ($patientId === '') {
-            $patientId = 'PN-' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
-        }
-    } elseif ($patientId === '') {
-        jsonResponse(false, 'Patient ID is required.', null, 422);
-    }
-    if ($role !== 'user') {
-        return;
-    }
-    $stmt = $conn->prepare("INSERT INTO tbl_patients (patient_id, user_id, first_name, last_name, email, patient_type, created_by) SELECT ?, user_id, COALESCE(firstname, ''), COALESCE(lastname, ''), email, 'registered', user_id FROM tbl_users WHERE user_id = ? ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)");
-    $stmt->bind_param('si', $patientId, $userId);
+    $stmt = $conn->prepare("
+        SELECT patient_id
+        FROM tbl_patients
+        WHERE user_id = ?
+        LIMIT 1
+    ");
+    $stmt->bind_param('i', $userId);
     $stmt->execute();
+    $result = $stmt->get_result();
+    $existing = $result->fetch_assoc();
     $stmt->close();
+    if ($existing && !empty($existing['patient_id'])) {
+        $patientId = $existing['patient_id'];
+        $stmt = $conn->prepare("
+            UPDATE tbl_patients
+            SET patient_type = 'registered',
+                status = 'active',
+                updated_at = NOW()
+            WHERE patient_id = ?
+            LIMIT 1
+        ");
+        $stmt->bind_param('s', $patientId);
+        $stmt->execute();
+        $stmt->close();
+        return $patientId;
+    }
+    $patientId = generateNextPatientId($conn);
+    $stmt = $conn->prepare("
+        INSERT INTO tbl_patients
+        (
+            patient_id,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            patient_type,
+            status,
+            created_by
+        )
+        SELECT
+            ?,
+            user_id,
+            COALESCE(firstname, ''),
+            COALESCE(lastname, ''),
+            email,
+            'registered',
+            'active',
+            user_id
+        FROM tbl_users
+        WHERE user_id = ?
+        LIMIT 1
+    ");
+    $stmt->bind_param('si', $patientId, $userId);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        jsonResponse(false, 'Unable to create the registered patient record.', null, 500);
+    }
+    $stmt->close();
+    return $patientId;
 }
-
 function patientRecordExists(mysqli $conn, string $patientId): bool
 {
     $stmt = $conn->prepare('SELECT patient_id FROM tbl_patients WHERE patient_id = ? LIMIT 1');
@@ -51,15 +88,20 @@ function patientRecordExists(mysqli $conn, string $patientId): bool
     $stmt->close();
     return $exists;
 }
-
-function generateWalkInPatientId(mysqli $conn): string
+function generateNextPatientId(mysqli $conn): string
 {
-    $result = $conn->query("SELECT COALESCE(MAX(CAST(SUBSTRING(patient_id, 4) AS UNSIGNED)), 0) AS highest_id FROM tbl_patients WHERE patient_id REGEXP '^PN-[0-9]{4}$'");
+    $result = $conn->query("
+        SELECT COALESCE(
+            MAX(CAST(SUBSTRING(patient_id, 4) AS UNSIGNED)),
+            0
+        ) AS highest_id
+        FROM tbl_patients
+        WHERE patient_id REGEXP '^PN-[0-9]{4}$'
+    ");
     $row = $result ? $result->fetch_assoc() : ['highest_id' => 0];
     $nextId = ((int) ($row['highest_id'] ?? 0)) + 1;
     return 'PN-' . str_pad((string) $nextId, 4, '0', STR_PAD_LEFT);
 }
-
 function assertAccess(mysqli $conn, string $patientId, int $userId, string $role): void
 {
     if ($role === 'doctor' || $role === 'staff') {
@@ -74,59 +116,319 @@ function assertAccess(mysqli $conn, string $patientId, int $userId, string $role
         jsonResponse(false, 'You may access only your own patient record.', null, 403);
     }
 }
-
+function assertDoctorPatientAccess(mysqli $conn, string $patientId, int $userId): void
+{
+    $stmt = $conn->prepare("
+        SELECT a.patient_id
+        FROM tbl_patient_appointments a
+        WHERE a.patient_id = ?
+          AND a.doctor_id = ?
+        LIMIT 1
+    ");
+    if (!$stmt) {
+        jsonResponse(false, 'Unable to verify doctor patient access.', null, 500);
+    }
+    $stmt->bind_param('si', $patientId, $userId);
+    $stmt->execute();
+    $allowed = $stmt->get_result()->num_rows === 1;
+    $stmt->close();
+    if (!$allowed) {
+        jsonResponse(false, 'You may access only patients assigned to you through an appointment.', null, 403);
+    }
+}
 function decodeJsonValue(?string $value): array
 {
     $decoded = json_decode((string) $value, true);
     return is_array($decoded) ? $decoded : [];
 }
-
-function triggerInventoryForecast(): void
+function normalizePhilippinePhone(string $phone): string
 {
-    $pythonScript = __DIR__ . '/../forecasting/inventory_demand_forecast.py';
-
-    if (!file_exists($pythonScript)) {
-        error_log(
-            'Inventory forecast script not found: ' . $pythonScript
-        );
-        return;
+    $phone = trim($phone);
+    if ($phone === '') {
+        return '';
     }
-
-    $command =
-        'start /B "" py -3 ' .
-        escapeshellarg($pythonScript) .
-        ' --data-source treatments' .
-        ' --db-host 127.0.0.1' .
-        ' --db-port 3307' .
-        ' --db-user root' .
-        ' --db-name dental_clinic_system' .
-        ' --save-to-db' .
-        ' > NUL 2>&1';
-
-    if (PHP_OS_FAMILY === 'Windows') {
-        pclose(
-            popen(
-                $command,
-                'r'
-            )
-        );
-        return;
+    $phone = preg_replace('/[\s\\\\\\\\-\\\\\\\\(\\\\\\\\)]/', '', $phone);
+    if (str_starts_with($phone, '+63')) {
+        return '+63' . substr(preg_replace('/\D/', '', substr($phone, 3)), 0);
     }
-
-    $command =
-        'python3 ' .
-        escapeshellarg($pythonScript) .
-        ' --data-source treatments' .
-        ' --db-host 127.0.0.1' .
-        ' --db-port 3307' .
-        ' --db-user root' .
-        ' --db-name dental_clinic_system' .
-        ' --save-to-db' .
-        ' > /dev/null 2>&1 &';
-
-    exec($command);
+    $digits = preg_replace('/\D/', '', $phone);
+    if (str_starts_with($digits, '09') && strlen($digits) === 11) {
+        return '+63' . substr($digits, 1);
+    }
+    if (str_starts_with($digits, '63') && strlen($digits) === 12) {
+        return '+' . $digits;
+    }
+    return $phone;
 }
-
+function inventoryTreatmentKey(string $patientId, int $treatmentId, string $appointmentId): string
+{
+    return hash('sha256', $patientId . '|' . $treatmentId . '|' . $appointmentId);
+}
+function inventoryMaterialList(array $materials): array
+{
+    $normalized = [];
+    foreach ($materials as $material) {
+        if (!is_array($material)) {
+            continue;
+        }
+        $itemId = trim((string) ($material['itemId'] ?? $material['item_id'] ?? $material['id'] ?? ''));
+        $itemName = trim((string) ($material['itemName'] ?? $material['item_name'] ?? $material['name'] ?? ''));
+        $quantity = max(0, (float) ($material['quantity'] ?? 0));
+        if (($itemId === '' && $itemName === '') || $quantity <= 0) {
+            continue;
+        }
+        $key = $itemId !== '' && ctype_digit($itemId) ? 'id:' . (int) $itemId : 'name:' . strtolower($itemName);
+        if (!isset($normalized[$key])) {
+            $normalized[$key] = ['itemId' => $itemId, 'itemName' => $itemName, 'quantity' => 0.0];
+        }
+        $normalized[$key]['quantity'] += $quantity;
+    }
+    return array_values($normalized);
+}
+function resolveInventoryMaterial(mysqli $conn, array $material): ?array
+{
+    $itemId = trim((string) ($material['itemId'] ?? ''));
+    $itemName = trim((string) ($material['itemName'] ?? ''));
+    if ($itemId !== '' && ctype_digit($itemId) && (int) $itemId > 0) {
+        $stmt = $conn->prepare('SELECT item_id, item_name, stock_quantity, unit FROM tbl_inventory_items WHERE item_id = ? LIMIT 1');
+        $id = (int) $itemId;
+        $stmt->bind_param('i', $id);
+    } else {
+        if ($itemName === '') {
+            return null;
+        }
+        $stmt = $conn->prepare('SELECT item_id, item_name, stock_quantity, unit FROM tbl_inventory_items WHERE LOWER(item_name) = LOWER(?) LIMIT 1');
+        $stmt->bind_param('s', $itemName);
+    }
+    if (!$stmt || !$stmt->execute()) {
+        if ($stmt) {
+            $stmt->close();
+        }
+        throw new RuntimeException('Unable to verify inventory material.');
+    }
+    $item = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $item ?: null;
+}
+function updateInventoryDemandHistory(mysqli $conn, string $itemName, string $demandDate, float $quantity): void
+{
+    if ($quantity == 0.0) {
+        return;
+    }
+    if ($quantity > 0) {
+        $stmt = $conn->prepare('INSERT INTO tbl_inventory_demand_history (item_name, demand_date, total_used, source_type) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE total_used = total_used + VALUES(total_used), source_type = VALUES(source_type)');
+        $sourceType = 'actual';
+        $stmt->bind_param('ssds', $itemName, $demandDate, $quantity, $sourceType);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to update inventory demand history.');
+        }
+        $stmt->close();
+        return;
+    }
+    $stmt = $conn->prepare('SELECT history_id, total_used, source_type FROM tbl_inventory_demand_history WHERE item_name = ? AND demand_date = ? LIMIT 1 FOR UPDATE');
+    $stmt->bind_param('ss', $itemName, $demandDate);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        throw new RuntimeException('Unable to read inventory demand history.');
+    }
+    $history = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$history || (string) ($history['source_type'] ?? '') !== 'actual') {
+        return;
+    }
+    $newTotal = max(0, (float) $history['total_used'] - abs($quantity));
+    if ($newTotal <= 0) {
+        $stmt = $conn->prepare('DELETE FROM tbl_inventory_demand_history WHERE history_id = ?');
+        $historyId = (int) $history['history_id'];
+        $stmt->bind_param('i', $historyId);
+    } else {
+        $stmt = $conn->prepare('UPDATE tbl_inventory_demand_history SET total_used = ?, source_type = ? WHERE history_id = ?');
+        $sourceType = 'actual';
+        $historyId = (int) $history['history_id'];
+        $stmt->bind_param('dsi', $newTotal, $sourceType, $historyId);
+    }
+    if (!$stmt->execute()) {
+        $stmt->close();
+        throw new RuntimeException('Unable to reverse inventory demand history.');
+    }
+    $stmt->close();
+}
+function syncTreatmentInventory(mysqli $conn, int $treatmentId, string $patientId, int $userId, string $appointmentId, string $procedureName, string $treatmentDate, string $toothNumber, string $patientName, array $consumedMaterials): array
+{
+    if ($treatmentId <= 0) {
+        throw new RuntimeException('A valid treatment ID is required for inventory processing.');
+    }
+    $demandDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $treatmentDate) ? $treatmentDate : date('Y-m-d');
+    $treatmentKey = inventoryTreatmentKey($patientId, $treatmentId, $appointmentId);
+    $requested = inventoryMaterialList($consumedMaterials);
+    $resolved = [];
+    foreach ($requested as $material) {
+        $item = resolveInventoryMaterial($conn, $material);
+        if (!$item) {
+            $label = $material['itemName'] !== '' ? $material['itemName'] : 'Item ID ' . $material['itemId'];
+            throw new RuntimeException('Inventory item not found for consumed material: ' . $label . '.');
+        }
+        $itemId = (int) $item['item_id'];
+        if (!isset($resolved[$itemId])) {
+            $resolved[$itemId] = ['itemId' => $itemId, 'itemName' => (string) $item['item_name'], 'quantity' => 0.0, 'unit' => (string) ($item['unit'] ?? 'unit')];
+        }
+        $resolved[$itemId]['quantity'] += (float) $material['quantity'];
+    }
+    $existing = [];
+    $stmt = $conn->prepare('SELECT usage_id, treatment_key, item_id, quantity FROM tbl_inventory_treatment_usage WHERE treatment_id = ? FOR UPDATE');
+    $stmt->bind_param('i', $treatmentId);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        throw new RuntimeException('Unable to verify existing treatment inventory usage.');
+    }
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $existing[(int) $row['item_id']] = ['usageId' => (int) $row['usage_id'], 'itemId' => (int) $row['item_id'], 'quantity' => (float) $row['quantity'], 'treatmentKey' => (string) ($row['treatment_key'] ?? '')];
+    }
+    $stmt->close();
+    $requestedIds = array_keys($resolved);
+    $existingIds = array_keys($existing);
+    sort($requestedIds);
+    sort($existingIds);
+    $same = $requestedIds === $existingIds;
+    if ($same) {
+        foreach ($requestedIds as $itemId) {
+            if (abs($resolved[$itemId]['quantity'] - $existing[$itemId]['quantity']) > 0.00001) {
+                $same = false;
+                break;
+            }
+        }
+    }
+    if ($same) {
+        $items = [];
+        foreach ($resolved as $material) {
+            $items[] = ['itemId' => (string) $material['itemId'], 'itemName' => $material['itemName'], 'quantity' => $material['quantity'], 'unit' => $material['unit'], 'status' => 'stock-out-completed'];
+        }
+        return ['movements' => [], 'usage' => array_values($existing), 'notification' => ['id' => 'inventory-treatment-' . $treatmentId, 'type' => 'inventory', 'notificationType' => 'inventory', 'procedure' => $procedureName, 'patientName' => $patientName, 'patientId' => $patientId, 'treatmentDate' => $demandDate, 'toothNumber' => $toothNumber, 'appointmentId' => $appointmentId, 'treatmentId' => $treatmentId, 'items' => $items, 'createdAt' => date('Y-m-d H:i:s')]];
+    }
+    foreach ($existing as $old) {
+        $oldItemId = (int) $old['itemId'];
+        $oldQuantity = (float) $old['quantity'];
+        $stmt = $conn->prepare('SELECT item_id, item_name, stock_quantity, unit FROM tbl_inventory_items WHERE item_id = ? LIMIT 1 FOR UPDATE');
+        $stmt->bind_param('i', $oldItemId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to restore previous inventory stock.');
+        }
+        $item = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!$item) {
+            throw new RuntimeException('A previously consumed inventory item no longer exists.');
+        }
+        $previousStock = (float) $item['stock_quantity'];
+        $newStock = $previousStock + $oldQuantity;
+        $stmt = $conn->prepare('UPDATE tbl_inventory_items SET stock_quantity = ?, updated_at = NOW() WHERE item_id = ?');
+        $stmt->bind_param('di', $newStock, $oldItemId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to restore previous inventory stock.');
+        }
+        $stmt->close();
+        $movementType = 'stock-in';
+        $itemName = (string) $item['item_name'];
+        $unit = (string) ($item['unit'] ?? 'unit');
+        $source = 'Treatment inventory reversal: ' . $procedureName;
+        $appointmentDbId = $appointmentId !== '' && ctype_digit($appointmentId) ? (int) $appointmentId : null;
+        $movementStmt = $conn->prepare('INSERT INTO tbl_inventory_movements (item_id, item_name, movement_type, quantity, unit, previous_stock, new_stock, source, treatment_id, appointment_id, patient_id, movement_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
+        $movementStmt->bind_param('issdsddsiis', $oldItemId, $itemName, $movementType, $oldQuantity, $unit, $previousStock, $newStock, $source, $treatmentId, $appointmentDbId, $patientId);
+        if (!$movementStmt->execute()) {
+            $movementStmt->close();
+            throw new RuntimeException('Unable to record inventory reversal.');
+        }
+        $movementStmt->close();
+        updateInventoryDemandHistory($conn, $itemName, $demandDate, -$oldQuantity);
+    }
+    if ($existing) {
+        $stmt = $conn->prepare('DELETE FROM tbl_inventory_treatment_usage WHERE treatment_id = ?');
+        $stmt->bind_param('i', $treatmentId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to reset previous treatment inventory usage.');
+        }
+        $stmt->close();
+    }
+    $movements = [];
+    $usage = [];
+    $notificationItems = [];
+    foreach ($resolved as $material) {
+        $itemId = (int) $material['itemId'];
+        $quantity = (float) $material['quantity'];
+        $stmt = $conn->prepare('SELECT item_id, item_name, stock_quantity, unit FROM tbl_inventory_items WHERE item_id = ? LIMIT 1 FOR UPDATE');
+        $stmt->bind_param('i', $itemId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to verify inventory stock.');
+        }
+        $item = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!$item) {
+            throw new RuntimeException('Inventory item no longer exists.');
+        }
+        $previousStock = (float) $item['stock_quantity'];
+        if ($previousStock < $quantity) {
+            throw new RuntimeException('Insufficient stock for ' . $item['item_name'] . '. Available: ' . $previousStock . ', required: ' . $quantity . '.');
+        }
+        $newStock = $previousStock - $quantity;
+        $itemName = (string) $item['item_name'];
+        $unit = (string) ($item['unit'] ?? 'unit');
+        $stmt = $conn->prepare('UPDATE tbl_inventory_items SET stock_quantity = ?, updated_at = NOW() WHERE item_id = ?');
+        $stmt->bind_param('di', $newStock, $itemId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to deduct inventory stock.');
+        }
+        $stmt->close();
+        $movementType = 'stock-out';
+        $source = 'Patient treatment: ' . $procedureName . ' (' . $patientName . ')';
+        $appointmentDbId = $appointmentId !== '' && ctype_digit($appointmentId) ? (int) $appointmentId : null;
+        $movementStmt = $conn->prepare('INSERT INTO tbl_inventory_movements (item_id, item_name, movement_type, quantity, unit, previous_stock, new_stock, source, treatment_id, appointment_id, patient_id, movement_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())');
+        $movementStmt->bind_param('issdsddsiis', $itemId, $itemName, $movementType, $quantity, $unit, $previousStock, $newStock, $source, $treatmentId, $appointmentDbId, $patientId);
+        if (!$movementStmt->execute()) {
+            $movementStmt->close();
+            throw new RuntimeException('Unable to record inventory movement.');
+        }
+        $movementId = (int) $movementStmt->insert_id;
+        $movementStmt->close();
+        $usageStmt = $conn->prepare('INSERT INTO tbl_inventory_treatment_usage (treatment_id, treatment_key, item_id, quantity) VALUES (?, ?, ?, ?)');
+        $usageStmt->bind_param('isid', $treatmentId, $treatmentKey, $itemId, $quantity);
+        if (!$usageStmt->execute()) {
+            $usageStmt->close();
+            throw new RuntimeException('Unable to record treatment inventory usage.');
+        }
+        $usageId = (int) $usageStmt->insert_id;
+        $usageStmt->close();
+        updateInventoryDemandHistory($conn, $itemName, $demandDate, $quantity);
+        $movements[] = ['id' => (string) $movementId, 'itemId' => (string) $itemId, 'itemName' => $itemName, 'unit' => $unit, 'type' => 'stock-out', 'quantity' => $quantity, 'previousStock' => $previousStock, 'newStock' => $newStock, 'reason' => $source, 'source' => 'clinical-treatment', 'patientId' => $patientId, 'appointmentId' => $appointmentId, 'treatmentId' => (string) $treatmentId, 'date' => date('Y-m-d H:i:s'), 'createdAt' => date('Y-m-d H:i:s')];
+        $usage[] = ['usageId' => (string) $usageId, 'treatmentId' => (string) $treatmentId, 'treatmentKey' => $treatmentKey, 'itemId' => (string) $itemId, 'itemName' => $itemName, 'quantity' => $quantity, 'unit' => $unit];
+        $notificationItems[] = ['itemId' => (string) $itemId, 'itemName' => $itemName, 'quantity' => $quantity, 'unit' => $unit, 'status' => 'stock-out-completed', 'available' => $newStock];
+    }
+    $notification = ['id' => 'inventory-treatment-' . $treatmentId, 'type' => 'inventory', 'notificationType' => 'inventory', 'procedure' => $procedureName, 'patientName' => $patientName, 'patientId' => $patientId, 'treatmentDate' => $demandDate, 'toothNumber' => $toothNumber, 'appointmentId' => $appointmentId, 'treatmentId' => $treatmentId, 'items' => $notificationItems, 'createdAt' => date('Y-m-d H:i:s')];
+    if ($notificationItems) {
+        $notificationId = $notification['id'];
+        $notificationType = 'inventory';
+        $payload = json_encode($notification, JSON_UNESCAPED_UNICODE);
+        $stmt = $conn->prepare('INSERT INTO tbl_staff_notifications (notification_id, notification_type, payload, created_by) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE notification_type = VALUES(notification_type), payload = VALUES(payload), created_by = VALUES(created_by), updated_at = NOW()');
+        $stmt->bind_param('sssi', $notificationId, $notificationType, $payload, $userId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to create inventory notification.');
+        }
+        $stmt->close();
+    } else {
+        $notificationId = $notification['id'];
+        $stmt = $conn->prepare('DELETE FROM tbl_staff_notifications WHERE notification_id = ?');
+        $stmt->bind_param('s', $notificationId);
+        $stmt->execute();
+        $stmt->close();
+    }
+    return ['movements' => $movements, 'usage' => $usage, 'notification' => $notification];
+}
 function patientPayload(mysqli $conn, string $patientId): ?array
 {
     $stmt = $conn->prepare('SELECT * FROM tbl_patients WHERE patient_id = ? LIMIT 1');
@@ -137,7 +439,6 @@ function patientPayload(mysqli $conn, string $patientId): ?array
     if (!$patient) {
         return null;
     }
-
     $patient['id'] = $patient['patient_id'];
     $patient['userId'] = $patient['user_id'];
     $patient['firstName'] = $patient['first_name'];
@@ -149,9 +450,8 @@ function patientPayload(mysqli $conn, string $patientId): ?array
     $patient['emergencyContact'] = $patient['emergency_contact'];
     $patient['appointments'] = [];
     $patient['treatments'] = [];
-    $patient['clinicalImages'] = [];
     $patient['dentalChart'] = ['teeth' => []];
-
+    $patient['clinicalImages'] = [];
     $stmt = $conn->prepare('SELECT * FROM tbl_medical_forms WHERE patient_id = ? LIMIT 1');
     $stmt->bind_param('s', $patientId);
     $stmt->execute();
@@ -179,7 +479,6 @@ function patientPayload(mysqli $conn, string $patientId): ?array
     } else {
         $patient['medicalForm'] = null;
     }
-
     $stmt = $conn->prepare("SELECT a.*, COALESCE(NULLIF(u.doctor_id, ''), CONCAT('DOC-', LPAD(u.user_id, 4, '0'))) AS doctor_code, TRIM(COALESCE(u.name, CONCAT(u.firstname, ' ', u.lastname))) AS doctor_name FROM tbl_patient_appointments a LEFT JOIN tbl_users u ON u.user_id = a.doctor_id WHERE a.patient_id = ? ORDER BY a.appointment_date DESC, a.appointment_time DESC");
     $stmt->bind_param('s', $patientId);
     $stmt->execute();
@@ -215,41 +514,28 @@ function patientPayload(mysqli $conn, string $patientId): ?array
         ];
     }
     $stmt->close();
-
-    $stmt = $conn->prepare('SELECT * FROM tbl_patient_treatments WHERE patient_id = ? ORDER BY treatment_date DESC, treatment_id DESC');
+    $stmt = $conn->prepare("SELECT t.*, TRIM(COALESCE(u.name, CONCAT(u.firstname, ' ', u.lastname))) AS doctor_name FROM tbl_patient_treatments t LEFT JOIN tbl_users u ON u.user_id = t.doctor_id WHERE t.patient_id = ? ORDER BY t.treatment_date DESC, t.treatment_id DESC");
     $stmt->bind_param('s', $patientId);
     $stmt->execute();
     $treatments = $stmt->get_result();
     while ($row = $treatments->fetch_assoc()) {
+        $treatmentId = (int) $row['treatment_id'];
         $patient['treatments'][] = [
-            'treatmentId' => $row['treatment_id'],
-            'appointmentId' => $row['appointment_id'],
+            'id' => (string) $treatmentId,
+            'treatmentId' => $treatmentId,
+            'patientId' => $row['patient_id'],
+            'doctorId' => $row['doctor_id'] !== null ? (int) $row['doctor_id'] : null,
+            'doctorName' => $row['doctor_name'] ?? '',
+            'appointmentId' => $row['appointment_id'] !== null ? (int) $row['appointment_id'] : null,
             'toothNumber' => $row['tooth_number'],
             'procedure' => $row['procedure_name'],
             'date' => $row['treatment_date'],
             'note' => $row['notes'],
             'consumedMaterials' => decodeJsonValue($row['consumed_materials']),
+            'createdAt' => $row['created_at'],
         ];
     }
     $stmt->close();
-
-    $stmt = $conn->prepare('SELECT * FROM tbl_clinical_images WHERE patient_id = ? ORDER BY image_date DESC, image_id DESC');
-    $stmt->bind_param('s', $patientId);
-    $stmt->execute();
-    $images = $stmt->get_result();
-    while ($row = $images->fetch_assoc()) {
-        $patient['clinicalImages'][] = [
-            'id' => (int) $row['image_id'],
-            'imageId' => $row['image_id'],
-            'title' => $row['title'],
-            'description' => $row['description'],
-            'beforeImageData' => preg_match('/^data:image\//', (string) $row['before_image']) ? $row['before_image'] : '/' . trim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/api/patient_records.php')), '/') . '/' . ltrim((string) $row['before_image'], '/'),
-            'afterImageData' => preg_match('/^data:image\//', (string) $row['after_image']) ? $row['after_image'] : '/' . trim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/api/patient_records.php')), '/') . '/' . ltrim((string) $row['after_image'], '/'),
-            'date' => $row['image_date'],
-        ];
-    }
-    $stmt->close();
-
     $stmt = $conn->prepare('SELECT * FROM tbl_dental_chart WHERE patient_id = ? ORDER BY recorded_at DESC, dental_chart_id DESC');
     $stmt->bind_param('s', $patientId);
     $stmt->execute();
@@ -261,70 +547,97 @@ function patientPayload(mysqli $conn, string $patientId): ?array
         $patient['dentalChart']['teeth'][$toothNumber]['updatedAt'] = $row['recorded_at'];
     }
     $stmt->close();
+    $clinicalImagesBasePath = rtrim(str_replace('\\\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/api/patient_records.php'))), '/');
+    $stmt = $conn->prepare('
+        SELECT
+            image_id,
+            patient_id,
+            doctor_id,
+            title,
+            description,
+            before_image,
+            after_image,
+            image_date,
+            created_at
+        FROM tbl_clinical_images
+        WHERE patient_id = ?
+        ORDER BY image_date DESC, image_id DESC
+    ');
+    $stmt->bind_param('s', $patientId);
+    $stmt->execute();
+    $clinicalImages = $stmt->get_result();
+    while ($row = $clinicalImages->fetch_assoc()) {
+        $beforeImage = (string) ($row['before_image'] ?? '');
+        $afterImage = (string) ($row['after_image'] ?? '');
+        $patient['clinicalImages'][] = [
+            'id' => (int) $row['image_id'],
+            'imageId' => (int) $row['image_id'],
+            'patientId' => $row['patient_id'],
+            'doctorId' => $row['doctor_id'] !== null ? (int) $row['doctor_id'] : null,
+            'title' => $row['title'],
+            'description' => $row['description'],
+            'beforeImage' => $beforeImage,
+            'afterImage' => $afterImage,
+            'beforeImageData' => preg_match('/^data:image\//', $beforeImage) ? $beforeImage : ($beforeImage !== '' ? $clinicalImagesBasePath . '/' . ltrim($beforeImage, '/') : ''),
+            'afterImageData' => preg_match('/^data:image\//', $afterImage) ? $afterImage : ($afterImage !== '' ? $clinicalImagesBasePath . '/' . ltrim($afterImage, '/') : ''),
+            'date' => $row['image_date'],
+            'createdAt' => $row['created_at'],
+        ];
+    }
+    $stmt->close();
     return $patient;
 }
-
 if ($method === 'GET') {
     if ($role === 'user') {
-        $patientStmt = $conn->prepare(
-            'SELECT patient_id
-             FROM tbl_patients
-             WHERE user_id = ?
-             AND status = "active"
-             LIMIT 1'
-        );
-
-        if (!$patientStmt) {
-            jsonResponse(false, 'Unable to load your patient record.', null, 500);
-        }
-
-        $patientStmt->bind_param('i', $userId);
-        $patientStmt->execute();
-
-        $patientRow = $patientStmt->get_result()->fetch_assoc();
-        $patientStmt->close();
-
-        if (!$patientRow) {
-            jsonResponse(false, 'Patient record not found.', null, 404);
-        }
-
-        $requestedPatientId = (string) $patientRow['patient_id'];
+        $requestedPatientId = getRegisteredPatientId($conn, $userId);
     }
-
     if ($requestedPatientId === '') {
-        $result = $conn->query(
-            'SELECT patient_id
-             FROM tbl_patients
-             WHERE status = "active"
-             ORDER BY last_name, first_name'
-        );
-
+        if ($role === 'doctor') {
+            $stmt = $conn->prepare("
+                SELECT DISTINCT p.patient_id
+                FROM tbl_patients p
+                INNER JOIN tbl_patient_appointments a
+                    ON a.patient_id = p.patient_id
+                WHERE p.status = 'active'
+                  AND a.doctor_id = ?
+                ORDER BY p.last_name, p.first_name
+            ");
+            if (!$stmt) {
+                jsonResponse(false, 'Unable to load doctor patients.', null, 500);
+            }
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        } else {
+            $result = $conn->query("
+                SELECT patient_id
+                FROM tbl_patients
+                WHERE status = 'active'
+                ORDER BY last_name, first_name
+            ");
+        }
         $records = [];
-
         while ($row = $result->fetch_assoc()) {
             $record = patientPayload($conn, $row['patient_id']);
-
             if ($record) {
                 $records[] = $record;
             }
         }
-
+        if (isset($stmt) && $stmt instanceof mysqli_stmt) {
+            $stmt->close();
+        }
         jsonResponse(true, 'Patients loaded.', $records);
     }
-
-    ensurePatient($conn, $requestedPatientId, $userId, $role);
-    assertAccess($conn, $requestedPatientId, $userId, $role);
-
-    jsonResponse(
-        true,
-        'Patient record loaded.',
-        patientPayload($conn, $requestedPatientId)
-    );
+    if ($role === 'doctor') {
+        assertDoctorPatientAccess($conn, $requestedPatientId, $userId);
+    } else {
+        assertAccess($conn, $requestedPatientId, $userId, $role);
+    }
+    jsonResponse(true, 'Patient record loaded.', patientPayload($conn, $requestedPatientId));
 }
-
 if ($method === 'DELETE') {
-    if ($role !== 'staff' && $role !== 'doctor') {
-        jsonResponse(false, 'Only staff or doctors may delete patient records.', null, 403);
+    if ($role !== 'staff') {
+        jsonResponse(false, 'Only staff may delete patient records.', null, 403);
     }
     $input = json_decode(file_get_contents('php://input'), true);
     if (!is_array($input)) {
@@ -344,29 +657,29 @@ if ($method === 'DELETE') {
     }
     jsonResponse(true, 'Patient record deleted.', ['patientId' => $patientId]);
 }
-
 if ($method !== 'POST') {
     jsonResponse(false, 'Unsupported request method.', null, 405);
 }
-
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
     $input = $_POST;
 }
 $patientId = trim((string) ($input['patientId'] ?? $requestedPatientId));
 if ($role === 'user') {
-    $patientId = trim((string) ($_SESSION['patient_id'] ?? $patientId));
-    if ($patientId === '') {
-        $patientId = 'PN-' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
-    }
+    $patientId = getRegisteredPatientId($conn, $userId);
 } elseif ($patientId === '') {
-    $patientId = generateWalkInPatientId($conn);
+    $patientId = generateNextPatientId($conn);
 }
-ensurePatient($conn, $patientId, $userId, $role);
-assertAccess($conn, $patientId, $userId, $role);
+if ($role === 'doctor') {
+    if ($patientId === '' || !patientRecordExists($conn, $patientId)) {
+        jsonResponse(false, 'Patient record was not found.', null, 404);
+    }
+    assertDoctorPatientAccess($conn, $patientId, $userId);
+} elseif ($patientId !== '') {
+    assertAccess($conn, $patientId, $userId, $role);
+}
 $patient = $input['patient'] ?? $input;
 $medical = $input['medicalForm'] ?? null;
-$forecastNeeded = false;
 $conn->begin_transaction();
 try {
     if (is_array($patient)) {
@@ -374,11 +687,11 @@ try {
         $lastName = trim((string) ($patient['lastName'] ?? $patient['lastname'] ?? ''));
         $dateOfBirth = (string) ($patient['dateOfBirth'] ?? '');
         $gender = (string) ($patient['gender'] ?? $patient['patientGender'] ?? '');
-        $phone = (string) ($patient['phone'] ?? '');
+        $phone = normalizePhilippinePhone((string) ($patient['phone'] ?? ''));
         $email = (string) ($patient['email'] ?? '');
         $address = (string) ($patient['address'] ?? '');
         $emergencyName = (string) ($patient['emergencyName'] ?? '');
-        $emergencyContact = (string) ($patient['emergencyContact'] ?? '');
+        $emergencyContact = normalizePhilippinePhone((string) ($patient['emergencyContact'] ?? ''));
         $patientType = $role === 'user' ? 'registered' : 'walk_in';
         $stmt = $conn->prepare('INSERT IGNORE INTO tbl_patients (patient_id, first_name, last_name, date_of_birth, gender, phone, email, address, emergency_name, emergency_contact, patient_type, created_by) VALUES (?, ?, ?, NULLIF(?, ""), ?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt->bind_param('sssssssssssi', $patientId, $firstName, $lastName, $dateOfBirth, $gender, $phone, $email, $address, $emergencyName, $emergencyContact, $patientType, $userId);
@@ -411,598 +724,55 @@ try {
         $stmt->execute();
         $stmt->close();
     }
-
-        if ($role === 'doctor' && is_array($patient)) {
-            if (array_key_exists('treatments', $patient)) {
-                $treatmentStmt = $conn->prepare(
-                    'INSERT INTO tbl_patient_treatments (
-                        patient_id,
-                        appointment_id,
-                        doctor_id,
-                        tooth_number,
-                        procedure_name,
-                        treatment_date,
-                        notes,
-                        consumed_materials
-                    ) VALUES (
-                        ?,
-                        NULLIF(?, ""),
-                        ?,
-                        ?,
-                        ?,
-                        NULLIF(?, ""),
-                        ?,
-                        ?
-                    )'
-                );
-
-                if (!$treatmentStmt) {
-                    throw new RuntimeException(
-                        'Unable to prepare treatment insert statement.'
-                    );
-                }
-
-                $updateTreatmentStmt = $conn->prepare(
-                    'UPDATE tbl_patient_treatments
-                    SET
-                        appointment_id = NULLIF(?, ""),
-                        doctor_id = ?,
-                        tooth_number = ?,
-                        procedure_name = ?,
-                        treatment_date = NULLIF(?, ""),
-                        notes = ?,
-                        consumed_materials = ?
-                    WHERE treatment_id = ?
-                    AND patient_id = ?'
-                );
-
-                if (!$updateTreatmentStmt) {
-                    throw new RuntimeException(
-                        'Unable to prepare treatment update statement.'
-                    );
-                }
-
-                foreach (
-                    is_array($patient['treatments'])
-                        ? $patient['treatments']
-                        : []
-                    as $treatment
-                ) {
-                    $treatmentId = (int) (
-                        $treatment['treatmentId']
-                        ?? $treatment['treatment_id']
-                        ?? $treatment['id']
-                        ?? 0
-                    );
-
-                    $appointmentId = (string) (
-                        $treatment['appointmentId']
-                        ?? $treatment['appointment_id']
-                        ?? ''
-                    );
-
-                    $appointmentIdInt = $appointmentId !== ''
-                        ? (int) $appointmentId
-                        : 0;
-
-                    $doctorId = (int) $userId;
-
-                    $toothNumber = (string) (
-                        $treatment['toothNumber']
-                        ?? $treatment['tooth']
-                        ?? ''
-                    );
-
-                    $procedureName = (string) (
-                        $treatment['procedure']
-                        ?? $treatment['treatment']
-                        ?? 'Dental Treatment'
-                    );
-
-                    $treatmentDate = (string) (
-                        $treatment['date']
-                        ?? $treatment['treatmentDate']
-                        ?? $treatment['createdAt']
-                        ?? ''
-                    );
-
-                    $treatmentNotes = (string) (
-                        $treatment['note']
-                        ?? $treatment['notes']
-                        ?? ''
-                    );
-
-                    $consumedMaterials = json_encode(
-                        $treatment['consumedMaterials'] ?? [],
-                        JSON_UNESCAPED_UNICODE
-                    );
-
-                    $savedTreatmentId = 0;
-
-                    if ($treatmentId > 0) {
-                        $updateTreatmentStmt->bind_param(
-                            'sisssssis',
-                            $appointmentId,
-                            $doctorId,
-                            $toothNumber,
-                            $procedureName,
-                            $treatmentDate,
-                            $treatmentNotes,
-                            $consumedMaterials,
-                            $treatmentId,
-                            $patientId
-                        );
-
-                        if (!$updateTreatmentStmt->execute()) {
-                            throw new RuntimeException(
-                                'Unable to update treatment: ' .
-                                $updateTreatmentStmt->error
-                            );
-                        }
-
-                        if ($updateTreatmentStmt->affected_rows === 0) {
-                            $checkTreatmentStmt = $conn->prepare(
-                                'SELECT treatment_id
-                                FROM tbl_patient_treatments
-                                WHERE treatment_id = ?
-                                AND patient_id = ?
-                                LIMIT 1'
-                            );
-
-                            if (!$checkTreatmentStmt) {
-                                throw new RuntimeException(
-                                    'Unable to verify existing treatment.'
-                                );
-                            }
-
-                            $checkTreatmentStmt->bind_param(
-                                'is',
-                                $treatmentId,
-                                $patientId
-                            );
-
-                            $checkTreatmentStmt->execute();
-
-                            $existingTreatment =
-                                $checkTreatmentStmt
-                                    ->get_result()
-                                    ->fetch_assoc();
-
-                            $checkTreatmentStmt->close();
-
-                            if (!$existingTreatment) {
-                                $treatmentId = 0;
-                            }
-                        }
-
-                        if ($treatmentId > 0) {
-                            $savedTreatmentId = $treatmentId;
-                        }
-                    }
-
-                    if ($savedTreatmentId === 0) {
-                        $treatmentStmt->bind_param(
-                            'ssisssss',
-                            $patientId,
-                            $appointmentId,
-                            $doctorId,
-                            $toothNumber,
-                            $procedureName,
-                            $treatmentDate,
-                            $treatmentNotes,
-                            $consumedMaterials
-                        );
-
-                        if (!$treatmentStmt->execute()) {
-                            throw new RuntimeException(
-                                'Unable to save treatment: ' .
-                                $treatmentStmt->error
-                            );
-                        }
-
-                        $savedTreatmentId = (int) $conn->insert_id;
-                    }
-
-                    if ($appointmentId !== '') {
-                        $appointmentStmt = $conn->prepare(
-                            'SELECT status
-                            FROM tbl_patient_appointments
-                            WHERE appointment_id = ?
-                            LIMIT 1'
-                        );
-
-                        if (!$appointmentStmt) {
-                            throw new RuntimeException(
-                                'Unable to prepare appointment status lookup.'
-                            );
-                        }
-
-                        $appointmentIdInt = (int) $appointmentId;
-
-                        $appointmentStmt->bind_param(
-                            'i',
-                            $appointmentIdInt
-                        );
-
-                        $appointmentStmt->execute();
-
-                        $appointmentResult =
-                            $appointmentStmt->get_result();
-
-                        $appointmentRow =
-                            $appointmentResult->fetch_assoc();
-
-                        $appointmentStmt->close();
-
-                        $appointmentStatus = strtolower(
-                            trim(
-                                (string) (
-                                    $appointmentRow['status']
-                                    ?? ''
-                                )
-                            )
-                        );
-
-                        if (
-                            $appointmentStatus !== 'completed' &&
-                            $appointmentStatus !== 'complete'
-                        ) {
-                            continue;
-                        }
-                    }
-
-                    $forecastNeeded = true;
-
-                    $materials =
-                        $treatment['consumedMaterials'] ?? [];
-
-                    if (!is_array($materials)) {
-                        continue;
-                    }
-
-                    foreach ($materials as $material) {
-                        if (!is_array($material)) {
-                            continue;
-                        }
-
-                        $itemId = (int) (
-                            $material['itemId']
-                            ?? $material['item_id']
-                            ?? 0
-                        );
-
-                        $itemName = trim(
-                            (string) (
-                                $material['itemName']
-                                ?? $material['item_name']
-                                ?? $material['name']
-                                ?? ''
-                            )
-                        );
-
-                        $quantity = (float) (
-                            $material['quantity']
-                            ?? $material['qty']
-                            ?? $material['used']
-                            ?? $material['amount']
-                            ?? $material['consumed']
-                            ?? 0
-                        );
-
-                        if ($quantity <= 0) {
-                            continue;
-                        }
-
-                        if ($itemId > 0) {
-                            $itemStmt = $conn->prepare(
-                                'SELECT
-                                    item_id,
-                                    item_name,
-                                    stock_quantity,
-                                    unit
-                                FROM tbl_inventory_items
-                                WHERE item_id = ?
-                                LIMIT 1'
-                            );
-
-                            if (!$itemStmt) {
-                                throw new RuntimeException(
-                                    'Unable to prepare inventory item lookup.'
-                                );
-                            }
-
-                            $itemStmt->bind_param(
-                                'i',
-                                $itemId
-                            );
-                        } else {
-                            $itemStmt = $conn->prepare(
-                                'SELECT
-                                    item_id,
-                                    item_name,
-                                    stock_quantity,
-                                    unit
-                                FROM tbl_inventory_items
-                                WHERE LOWER(item_name) = LOWER(?)
-                                LIMIT 1'
-                            );
-
-                            if (!$itemStmt) {
-                                throw new RuntimeException(
-                                    'Unable to prepare inventory item lookup.'
-                                );
-                            }
-
-                            $itemStmt->bind_param(
-                                's',
-                                $itemName
-                            );
-                        }
-
-                        $itemStmt->execute();
-
-                        $itemResult =
-                            $itemStmt->get_result();
-
-                        $inventoryItem =
-                            $itemResult->fetch_assoc();
-
-                        $itemStmt->close();
-
-                        if (!$inventoryItem) {
-                            throw new RuntimeException(
-                                'Inventory item not found: ' .
-                                ($itemName !== ''
-                                    ? $itemName
-                                    : 'ID ' . $itemId)
-                            );
-                        }
-
-                        $inventoryItemId =
-                            (int) $inventoryItem['item_id'];
-
-                        $inventoryItemName =
-                            (string) $inventoryItem['item_name'];
-
-                        $previousStock =
-                            (float) (
-                                $inventoryItem['stock_quantity']
-                                ?? 0
-                            );
-
-                        $unit =
-                            (string) (
-                                $inventoryItem['unit']
-                                ?? 'unit'
-                            );
-
-                        $treatmentKey = hash(
-                            'sha256',
-                            'treatment|' . $savedTreatmentId
-                        );
-
-                        $usageCheckStmt = $conn->prepare(
-                            'SELECT usage_id
-                            FROM tbl_inventory_treatment_usage
-                            WHERE treatment_id = ?
-                            AND item_id = ?
-                            LIMIT 1'
-                        );
-
-                        if (!$usageCheckStmt) {
-                            throw new RuntimeException(
-                                'Unable to prepare treatment usage lookup.'
-                            );
-                        }
-
-                        $usageCheckStmt->bind_param(
-                            'ii',
-                            $savedTreatmentId,
-                            $inventoryItemId
-                        );
-
-                        $usageCheckStmt->execute();
-
-                        $usageResult =
-                            $usageCheckStmt->get_result();
-
-                        $alreadyProcessed =
-                            $usageResult->fetch_assoc();
-
-                        $usageCheckStmt->close();
-
-                        if ($alreadyProcessed) {
-                            continue;
-                        }
-                        
-                        if ($quantity > $previousStock) {
-                            throw new RuntimeException(
-                                'Insufficient stock for ' .
-                                $inventoryItemName .
-                                '. Available: ' .
-                                $previousStock .
-                                ' ' .
-                                $unit .
-                                '. Required: ' .
-                                $quantity .
-                                ' ' .
-                                $unit .
-                                '.'
-                            );
-                        }
-
-                        $newStock =
-                            $previousStock - $quantity;
-
-                        $updateStockStmt = $conn->prepare(
-                            'UPDATE tbl_inventory_items
-                            SET stock_quantity = ?,
-                                updated_at = NOW()
-                            WHERE item_id = ?'
-                        );
-
-                        if (!$updateStockStmt) {
-                            throw new RuntimeException(
-                                'Unable to prepare inventory stock update.'
-                            );
-                        }
-
-                        $updateStockStmt->bind_param(
-                            'di',
-                            $newStock,
-                            $inventoryItemId
-                        );
-
-                        if (!$updateStockStmt->execute()) {
-                            throw new RuntimeException(
-                                'Unable to update inventory stock: ' .
-                                $updateStockStmt->error
-                            );
-                        }
-
-                        $updateStockStmt->close();
-
-                        $movementSource =
-                            'Completed treatment';
-
-                        $movementType =
-                            'stock-out';
-
-                        $movementStmt = $conn->prepare(
-                            'INSERT INTO tbl_inventory_movements (
-                                item_id,
-                                item_name,
-                                movement_type,
-                                quantity,
-                                unit,
-                                previous_stock,
-                                new_stock,
-                                source,
-                                appointment_id,
-                                patient_id,
-                                movement_date
-                            ) VALUES (
-                                ?,
-                                ?,
-                                ?,
-                                ?,
-                                ?,
-                                ?,
-                                ?,
-                                ?,
-                                NULLIF(?, 0),
-                                ?,
-                                NOW()
-                            )'
-                        );
-
-                        if (!$movementStmt) {
-                            throw new RuntimeException(
-                                'Unable to prepare inventory movement insert.'
-                            );
-                        }
-
-                        $movementStmt->bind_param(
-                            'issdsddsis',
-                            $inventoryItemId,
-                            $inventoryItemName,
-                            $movementType,
-                            $quantity,
-                            $unit,
-                            $previousStock,
-                            $newStock,
-                            $movementSource,
-                            $appointmentIdInt,
-                            $patientId
-                        );
-
-                        if (!$movementStmt->execute()) {
-                            throw new RuntimeException(
-                                'Unable to create inventory movement: ' .
-                                $movementStmt->error
-                            );
-                        }
-
-                        $movementStmt->close();
-
-                        $usageStmt = $conn->prepare(
-                            'INSERT INTO tbl_inventory_treatment_usage (
-                                treatment_id,
-                                treatment_key,
-                                item_id,
-                                quantity
-                            ) VALUES (?, ?, ?, ?)'
-                        );
-
-                        if (!$usageStmt) {
-                            throw new RuntimeException(
-                                'Unable to prepare treatment usage insert.'
-                            );
-                        }
-
-                        $usageStmt->bind_param(
-                            'isid',
-                            $savedTreatmentId,
-                            $treatmentKey,
-                            $inventoryItemId,
-                            $quantity
-                        );
-
-                        if (!$usageStmt->execute()) {
-                            throw new RuntimeException(
-                                'Unable to record treatment inventory usage: ' .
-                                $usageStmt->error
-                            );
-                        }
-
-                        $usageStmt->close();
-                    }
-                }
-
-                $treatmentStmt->close();
-                $updateTreatmentStmt->close();
+    if ($role === 'doctor' && is_array($patient)) {
+        if (array_key_exists('treatments', $patient)) {
+            $stmt = $conn->prepare('INSERT INTO tbl_patient_treatments (patient_id, doctor_id, appointment_id, tooth_number, procedure_name, treatment_date, notes, consumed_materials) VALUES (?, ?, NULLIF(?, 0), ?, ?, NULLIF(?, ""), ?, ?)');
+            if (!$stmt) {
+                throw new RuntimeException('Unable to prepare treatment save.');
             }
-        }
-
-        if (isset($patient['dentalChart']['teeth']) && is_array($patient['dentalChart']['teeth'])) {
-            $conn->query("DELETE FROM tbl_dental_chart WHERE patient_id = '" . $conn->real_escape_string($patientId) . "'");
-            $stmt = $conn->prepare('INSERT INTO tbl_dental_chart (patient_id, tooth_number, procedure_name, notes, recorded_at) VALUES (?, ?, ?, ?, COALESCE(NULLIF(?, ""), NOW()))');
-            foreach ($patient['dentalChart']['teeth'] as $toothNumber => $tooth) {
-                if (!is_array($tooth)) {
-                    continue;
+            foreach (is_array($patient['treatments']) ? $patient['treatments'] : [] as $treatment) {
+                $treatmentId = (int) ($treatment['treatmentId'] ?? $treatment['treatment_id'] ?? $treatment['id'] ?? 0);
+                $appointmentId = trim((string) ($treatment['appointmentId'] ?? $treatment['appointment_id'] ?? ''));
+                $toothNumber = trim((string) ($treatment['toothNumber'] ?? $treatment['tooth'] ?? ''));
+                $procedureName = trim((string) ($treatment['procedure'] ?? $treatment['treatment'] ?? 'Dental Treatment'));
+                $treatmentDate = trim((string) ($treatment['date'] ?? $treatment['createdAt'] ?? ''));
+                $treatmentNotes = (string) ($treatment['note'] ?? $treatment['notes'] ?? '');
+                $materialsArray = is_array($treatment['consumedMaterials'] ?? null) ? $treatment['consumedMaterials'] : [];
+                $consumedMaterials = json_encode($materialsArray, JSON_UNESCAPED_UNICODE);
+                if ($consumedMaterials === false) {
+                    throw new RuntimeException('Unable to encode consumed treatment materials.');
                 }
-                $procedureName = (string) ($tooth['procedure'] ?? '');
-                $toothNotes = (string) ($tooth['note'] ?? $tooth['notes'] ?? '');
-                if ($procedureName === '' && $toothNotes === '') {
-                    continue;
+                $appointmentDbId = $appointmentId !== '' ? (int) $appointmentId : 0;
+                if ($treatmentId > 0) {
+                    $updateStmt = $conn->prepare('UPDATE tbl_patient_treatments SET doctor_id = ?, appointment_id = NULLIF(?, 0), tooth_number = ?, procedure_name = ?, treatment_date = NULLIF(?, ""), notes = ?, consumed_materials = ? WHERE treatment_id = ? AND patient_id = ?');
+                    if (!$updateStmt) {
+                        throw new RuntimeException('Unable to prepare treatment update.');
+                    }
+                    $updateStmt->bind_param('iisssssis', $userId, $appointmentDbId, $toothNumber, $procedureName, $treatmentDate, $treatmentNotes, $consumedMaterials, $treatmentId, $patientId);
+                    if (!$updateStmt->execute()) {
+                        $updateStmt->close();
+                        throw new RuntimeException('Unable to update treatment record.');
+                    }
+                    $updateStmt->close();
+                } else {
+                    $stmt->bind_param('siisssss', $patientId, $userId, $appointmentDbId, $toothNumber, $procedureName, $treatmentDate, $treatmentNotes, $consumedMaterials);
+                    if (!$stmt->execute()) {
+                        throw new RuntimeException('Unable to save treatment record.');
+                    }
+                    $treatmentId = (int) $stmt->insert_id;
+                    if ($treatmentId <= 0) {
+                        throw new RuntimeException('Unable to determine the saved treatment ID.');
+                    }
                 }
-                $recordedAt = (string) ($tooth['updatedAt'] ?? '');
-                $toothNumber = (string) $toothNumber;
-                $stmt->bind_param('sssss', $patientId, $toothNumber, $procedureName, $toothNotes, $recordedAt);
-                $stmt->execute();
+                $patientName = trim((string) ($patient['firstName'] ?? $patient['firstname'] ?? '') . ' ' . (string) ($patient['lastName'] ?? $patient['lastname'] ?? ''));
+                syncTreatmentInventory($conn, $treatmentId, $patientId, $userId, $appointmentId, $procedureName, $treatmentDate, $toothNumber, $patientName !== '' ? $patientName : 'Patient', $materialsArray);
             }
             $stmt->close();
         }
-    $conn->commit();
-
-    if ($forecastNeeded) {
-        triggerInventoryForecast();
     }
-
+    $conn->commit();
 } catch (Throwable $exception) {
     $conn->rollback();
-    error_log('Patient record save error: ' . $exception->getMessage());
-
-    jsonResponse(
-        false,
-        'Unable to save patient record. Please try again.',
-        null,
-        500
-    );
+    jsonResponse(false, 'Unable to save patient record.', null, 500);
 }
-
-jsonResponse(
-    true,
-    'Patient record saved.',
-    patientPayload($conn, $patientId)
-);
+jsonResponse(true, 'Patient record saved.', patientPayload($conn, $patientId));

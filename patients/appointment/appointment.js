@@ -26,7 +26,7 @@ const SERVICES = [
 ];
 let DENTISTS = {};
 let doctors = [];
-const CLINIC_SCHEDULE = { startHour: 10, endHour: 20, slotMinutes: 30 };
+const CLINIC_SCHEDULE = { startHour: 10, endHour: 17.5, slotMinutes: 30 };
 let patients = [];
 let appointments = [];
 let rescheduleRequests = [];
@@ -52,7 +52,6 @@ async function initializePage() {
   normalizeSelectedDate();
   normalizeCalendarDate();
   setupEvents();
-  renderAll();
   await loadDoctors();
   await loadAppointments();
   await hydrateRescheduleRequestsFromDatabase();
@@ -67,6 +66,7 @@ async function initializePage() {
     await loadAppointments();
     await hydrateRescheduleRequestsFromDatabase();
     resolveCurrentPatient();
+    await hydrateCurrentPatientFromDatabase();
     normalizeSelectedDate();
     renderAll();
   }, 30000);
@@ -786,33 +786,55 @@ async function savePatientRecordToDatabase() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        patientId:
-          currentPatient.patientId ||
-          currentPatient.id,
-
+        patientId: currentPatient.patientId || currentPatient.id,
         patient: currentPatient,
-
-        medicalForm:
-          currentPatient.medicalForm || null,
+        medicalForm: currentPatient.medicalForm || null,
       }),
     });
 
     const result = await response.json();
 
     if (!response.ok || !result.success) {
-      throw new Error(
-        result.message ||
-        "Patient record was not saved.",
+      throw new Error(result.message || "Patient record was not saved.");
+    }
+
+    if (result.data) {
+      const savedPatient = result.data;
+      const savedPatientId = getCanonicalPatientId(savedPatient);
+
+      currentPatient = {
+        ...currentPatient,
+        ...savedPatient,
+        patientId: savedPatientId,
+        id: savedPatientId,
+      };
+
+      const patientIndex = patients.findIndex(
+        (patient) => getCanonicalPatientId(patient) === savedPatientId,
       );
+
+      if (patientIndex !== -1) {
+        patients[patientIndex] = {
+          ...patients[patientIndex],
+          ...currentPatient,
+        };
+      } else {
+        patients.push(currentPatient);
+      }
+
+      if (currentUser) {
+        currentUser.patientId = savedPatientId;
+        currentUser.patient_id = savedPatientId;
+      }
     }
 
     return true;
   } catch (error) {
-    console.error(
-      "Unable to save patient record to database:",
-      error,
+    console.error("Unable to save patient record to database:", error);
+    showToast(
+      error.message ||
+        "The medical record could not be saved. Please try again.",
     );
-
     return false;
   }
 }
@@ -1017,13 +1039,13 @@ function renderUpcomingAppointment() {
 
   if (!appointment) {
     container.innerHTML = `
-  <div class="empty-upcoming">
-  <div class="empty-upcoming-icon">
-  <i class="fa-regular fa-calendar-xmark"></i>
-  </div>
-  <p>No appointment recorded on this date.</p>
-  </div>
-  `;
+    <div class="empty-upcoming">
+    <div class="empty-upcoming-icon">
+    <i class="fa-regular fa-calendar-xmark"></i>
+    </div>
+    <p>No appointment recorded on this date.</p>
+    </div>
+    `;
     return;
   }
   const date = getAppointmentDate(appointment);
@@ -1041,42 +1063,42 @@ function renderUpcomingAppointment() {
   const statusLabel = getPatientStatusLabel(rawStatus, date);
   const statusClass = getStatusClass(rawStatus);
   container.innerHTML = `
-  <div class="upcoming-card-content">
-  <div>
-  <div class="upcoming-patient-avatar">${escapeHtml(initials.toUpperCase())}</div>
-  <div class="upcoming-patient-info">
-  <strong>${escapeHtml(patientName)}</strong>
-  <span>${escapeHtml(service)} • ${escapeHtml(dentist)}</span>
-  <span class="detail-status ${statusClass}">${escapeHtml(statusLabel)}</span>
-  </div>
-  </div>
-  <div class="upcoming-schedule">
-  <div class="upcoming-date">
-  <span class="upcoming-schedule-label">Appointment Date</span>
-  <strong>${escapeHtml(formatDate(date))}</strong>
-  </div>
-  <div class="upcoming-time-range">
-  <div>
-  <span class="upcoming-schedule-label">Start Time</span>
-  <strong>${escapeHtml(formatTime(time))}</strong>
-  </div>
-  <div class="upcoming-time-arrow">
-  <i class="fa-solid fa-arrow-right"></i>
-  </div>
-  <div>
-  <span class="upcoming-schedule-label">End Time</span>
-  <strong>${escapeHtml(endTime)}</strong>
-  </div>
-  </div>
-  </div>
-  <div class="upcoming-divider"></div>
-  <div class="upcoming-actions">
-  <button type="button" class="btn-secondary" data-appointment-action="details" data-appointment-id="${escapeHtml(getAppointmentId(appointment))}">
-  View Details
-  </button>
-  </div>
-  </div>
-  `;
+    <div class="upcoming-card-content">
+    <div>
+    <div class="upcoming-patient-avatar">${escapeHtml(initials.toUpperCase())}</div>
+    <div class="upcoming-patient-info">
+    <strong>${escapeHtml(patientName)}</strong>
+    <span>${escapeHtml(service)} • ${escapeHtml(dentist)}</span>
+    <span class="detail-status ${statusClass}">${escapeHtml(statusLabel)}</span>
+    </div>
+    </div>
+    <div class="upcoming-schedule">
+    <div class="upcoming-date">
+    <span class="upcoming-schedule-label">Appointment Date</span>
+    <strong>${escapeHtml(formatDate(date))}</strong>
+    </div>
+    <div class="upcoming-time-range">
+    <div>
+    <span class="upcoming-schedule-label">Start Time</span>
+    <strong>${escapeHtml(formatTime(time))}</strong>
+    </div>
+    <div class="upcoming-time-arrow">
+    <i class="fa-solid fa-arrow-right"></i>
+    </div>
+    <div>
+    <span class="upcoming-schedule-label">End Time</span>
+    <strong>${escapeHtml(endTime)}</strong>
+    </div>
+    </div>
+    </div>
+    <div class="upcoming-divider"></div>
+    <div class="upcoming-actions">
+    <button type="button" class="btn-secondary" data-appointment-action="details" data-appointment-id="${escapeHtml(getAppointmentId(appointment))}">
+    View Details
+    </button>
+    </div>
+    </div>
+    `;
 }
 function updateServiceDurationInfo() {
   const info = document.getElementById("serviceDurationInfo");
@@ -1092,18 +1114,12 @@ function updateServiceDurationInfo() {
 }
 async function openBookingModal(date = null, dentist = null) {
   currentUser = getCurrentUser();
-  loadAppointments();
+  await loadAppointments();
   await loadDoctors();
   renderDentistSelector();
   resolveCurrentPatient();
   await hydrateCurrentPatientFromDatabase();
   resolveCurrentPatient();
-  const restriction = getPatientBookingRestriction();
-  if (restriction.isRestricted) {
-    renderBookingRestrictionAlert();
-    showToast(getBookingRestrictionMessage(restriction));
-    return;
-  }
   const modal = document.getElementById("bookingModal");
   if (!modal) return;
   const serviceInput = document.getElementById("serviceInput");
@@ -1424,7 +1440,7 @@ function generateBookingSlotStatuses(
   );
   for (
     let minutes = CLINIC_SCHEDULE.startHour * 60;
-    minutes + duration <= CLINIC_SCHEDULE.endHour * 60;
+    minutes <= CLINIC_SCHEDULE.endHour * 60;
     minutes += CLINIC_SCHEDULE.slotMinutes
   ) {
     const hour = Math.floor(minutes / 60);
@@ -1717,6 +1733,7 @@ function getPatientBookingBlockMessage(
     }
 
     const status = normalizeStatus(getAppointmentStatus(appointment));
+
     if (
       status === "completed" ||
       status === "cancelled" ||
@@ -1727,20 +1744,19 @@ function getPatientBookingBlockMessage(
     }
 
     const appointmentDate = getAppointmentDate(appointment);
-    if (!appointmentDate || isPastDate(appointmentDate)) {
+    if (!appointmentDate) {
       return false;
     }
 
-    if (!date) return true;
-
-    return appointmentDate === date;
+    return true;
   });
 
   if (!existingAppointment) return "";
 
   const dateLabel = formatDate(existingAppointment.date);
   const timeLabel = formatTime(getAppointmentTime(existingAppointment));
-  return `You already have an active appointment scheduled on ${dateLabel} at ${timeLabel}. Please complete or delete that appointment before booking another one.`;
+
+  return `You already have an active appointment scheduled on ${dateLabel} at ${timeLabel}. Please complete your existing appointment before booking a new one.`;
 }
 function getPatientBookingRestriction() {
   const behavior = window.DentaNuevaAppointmentBehavior;
@@ -1976,7 +1992,7 @@ function setRecordEditorValues(name, values) {
 }
 function populateMedicalRecordEditor() {
   const medical = currentPatient?.medicalForm || {};
-    document.getElementById("recordEditFirstName").value =
+  document.getElementById("recordEditFirstName").value =
     currentPatient?.firstName || "";
 
   document.getElementById("recordEditLastName").value =
@@ -1986,9 +2002,7 @@ function populateMedicalRecordEditor() {
     currentPatient?.dateOfBirth || "";
 
   document.getElementById("recordEditGender").value =
-    currentPatient?.gender ||
-    currentPatient?.patientGender ||
-    "";
+    currentPatient?.gender || currentPatient?.patientGender || "";
 
   document.getElementById("recordEditPhone").value =
     currentPatient?.phone || "";
@@ -2062,14 +2076,11 @@ async function saveMedicalRecordEditor() {
   const dateOfBirth =
     document.getElementById("recordEditDateOfBirth")?.value || "";
 
-  const gender =
-    document.getElementById("recordEditGender")?.value || "";
+  const gender = document.getElementById("recordEditGender")?.value || "";
 
-  const phone =
-    document.getElementById("recordEditPhone")?.value.trim() || "";
+  const phone = document.getElementById("recordEditPhone")?.value.trim() || "";
 
-  const email =
-    document.getElementById("recordEditEmail")?.value.trim() || "";
+  const email = document.getElementById("recordEditEmail")?.value.trim() || "";
 
   const address =
     document.getElementById("recordEditAddress")?.value.trim() || "";
@@ -2121,8 +2132,8 @@ async function saveMedicalRecordEditor() {
   }
 
   /* ================================
-     MEDICAL INFORMATION
-  ================================= */
+      MEDICAL INFORMATION
+    ================================= */
 
   const now = new Date().toISOString();
   const existingMedical = currentPatient.medicalForm || {};
@@ -2182,8 +2193,8 @@ async function saveMedicalRecordEditor() {
   };
 
   /* ================================
-     UPDATE PATIENT RECORD
-  ================================= */
+      UPDATE PATIENT RECORD
+    ================================= */
 
   currentPatient.medicalForm = updatedMedicalForm;
   currentPatient.updatedAt = now;
@@ -2202,22 +2213,16 @@ async function saveMedicalRecordEditor() {
   } else {
     patients.push(currentPatient);
   }
-    savePatients(patients);
-
   const saved = await savePatientRecordToDatabase();
 
   if (!saved) {
-    showToast(
-      "The medical record could not be saved. Please try again.",
-    );
+    showToast("The medical record could not be saved. Please try again.");
     return;
   }
 
-  /* ================================
-     UPDATE UI
-  ================================= */
-
   updateMedicalRecordSummary();
+
+  loadBookingMedicalInformation();
 
   closeMedicalRecordEditor();
 
@@ -2499,35 +2504,35 @@ function openAppointmentDetail(appointmentId) {
   if (subtitle)
     subtitle.textContent = `${formatShortDate(date)} · ${formatTime(time)}`;
   body.innerHTML = `
-  <div class="detail-grid">
-  <div class="detail-card full">
-  <span>Service</span>
-  <strong>${escapeHtml(service)}</strong>
-  </div>
-  <div class="detail-card">
-  <span>Date</span>
-  <strong>${escapeHtml(formatDate(date))}</strong>
-  </div>
-  <div class="detail-card">
-  <span>Time</span>
-  <strong>${escapeHtml(formatTime(time))}</strong>
-  </div>
-  <div class="detail-card">
-  <span>Dentist</span>
-  <strong>${escapeHtml(dentist)}</strong>
-  </div>
-  <div class="detail-card">
-  <span>Duration</span>
-  <strong>${duration ? `${duration} minutes` : "Not specified"}</strong>
-  </div>
-  <div class="detail-card full">
-  <span>Status</span>
-  <strong>
-  <span class="detail-status ${getStatusClass(status)}">${escapeHtml(getPatientStatusLabel(status, date))}</span>
-  </strong>
-  </div>
-  </div>
-  `;
+    <div class="detail-grid">
+    <div class="detail-card full">
+    <span>Service</span>
+    <strong>${escapeHtml(service)}</strong>
+    </div>
+    <div class="detail-card">
+    <span>Date</span>
+    <strong>${escapeHtml(formatDate(date))}</strong>
+    </div>
+    <div class="detail-card">
+    <span>Time</span>
+    <strong>${escapeHtml(formatTime(time))}</strong>
+    </div>
+    <div class="detail-card">
+    <span>Dentist</span>
+    <strong>${escapeHtml(dentist)}</strong>
+    </div>
+    <div class="detail-card">
+    <span>Duration</span>
+    <strong>${duration ? `${duration} minutes` : "Not specified"}</strong>
+    </div>
+    <div class="detail-card full">
+    <span>Status</span>
+    <strong>
+    <span class="detail-status ${getStatusClass(status)}">${escapeHtml(getPatientStatusLabel(status, date))}</span>
+    </strong>
+    </div>
+    </div>
+    `;
   const requestButton = document.getElementById("requestRescheduleBtn");
   const cancelButton = document.getElementById("cancelAppointmentBtn");
   const deleteButton = document.getElementById("deleteAppointmentBtn");
@@ -2741,9 +2746,9 @@ function openRescheduleRequestModal() {
   const requestDate = document.getElementById("requestDate");
   if (!modal || !current) return;
   current.innerHTML = `
-  <strong>${escapeHtml(getAppointmentService(appointment))}</strong>
-  <span>${escapeHtml(formatDate(getAppointmentDate(appointment)))} · ${escapeHtml(formatTime(getAppointmentTime(appointment)))} · ${escapeHtml(getDentistName(appointment))}</span>
-  `;
+    <strong>${escapeHtml(getAppointmentService(appointment))}</strong>
+    <span>${escapeHtml(formatDate(getAppointmentDate(appointment)))} · ${escapeHtml(formatTime(getAppointmentTime(appointment)))} · ${escapeHtml(getDentistName(appointment))}</span>
+    `;
   if (requestDate) {
     requestDate.min = dateToKey(new Date());
     requestDate.value = "";
@@ -2984,9 +2989,9 @@ function openStaffRescheduleModal(request) {
     request?.currentTime ||
     (appointment ? getAppointmentTime(appointment) : "");
   current.innerHTML = `
-  <strong>${escapeHtml(serviceName)}</strong>
-  <span>${escapeHtml(formatDate(currentDate))} · ${escapeHtml(formatTime(currentTime))} · ${escapeHtml(dentistName)}</span>
-  `;
+    <strong>${escapeHtml(serviceName)}</strong>
+    <span>${escapeHtml(formatDate(currentDate))} · ${escapeHtml(formatTime(currentTime))} · ${escapeHtml(dentistName)}</span>
+    `;
   if (reasonInput)
     reasonInput.value = request?.reasonLabel || request?.reason || "";
   if (messageInput) messageInput.value = request?.message || "";
@@ -3124,11 +3129,6 @@ async function confirmStaffRescheduleResponse() {
   );
   if (!appointment) {
     showToast("The appointment could not be found.");
-    return;
-  }
-  const restriction = getPatientBookingRestriction();
-  if (restriction.isRestricted) {
-    showToast(getBookingRestrictionMessage(restriction));
     return;
   }
   const duration = Number(
@@ -3498,37 +3498,37 @@ function handleRescheduleAlert() {
   statusElement.className = `reschedule-details-status ${status}`;
   statusElement.textContent = statusLabel;
   content.innerHTML = `
-      <div class="reschedule-detail-item">
-        <span>Reason</span>
-        <strong>${escapeHtml(latest?.reasonLabel || latest?.reason || "Reschedule Request")}</strong>
-      </div>
-      <div class="reschedule-detail-item">
-        <span>Service</span>
-        <strong>${escapeHtml(service)}</strong>
-      </div>
-      <div class="reschedule-detail-item full">
-        <span>Current Appointment</span>
-        <strong>${escapeHtml(formatDate(currentDate))} · ${escapeHtml(formatTime(currentTime))} · ${escapeHtml(dentist)}</strong>
-      </div>
-      <div class="reschedule-detail-item full">
-        <span>Requested New Schedule</span>
-        <strong>${preferredDate && preferredTime ? `${escapeHtml(formatDate(preferredDate))} · ${escapeHtml(formatTime(preferredTime))}` : "No preferred schedule provided"}</strong>
-      </div>
-      ${
-        status === "approved" && approvedDate && approvedTime
-          ? `
-      <div class="reschedule-detail-item full">
-        <span>Approved Schedule</span>
-        <strong>${escapeHtml(formatDate(approvedDate))} · ${escapeHtml(formatTime(approvedTime))}</strong>
-      </div>
-      `
-          : ""
-      }
-      <div class="reschedule-detail-item full">
-        <span>Message to Clinic</span>
-        <p>${escapeHtml(latest?.message || "No message provided.")}</p>
-      </div>
-    `;
+        <div class="reschedule-detail-item">
+          <span>Reason</span>
+          <strong>${escapeHtml(latest?.reasonLabel || latest?.reason || "Reschedule Request")}</strong>
+        </div>
+        <div class="reschedule-detail-item">
+          <span>Service</span>
+          <strong>${escapeHtml(service)}</strong>
+        </div>
+        <div class="reschedule-detail-item full">
+          <span>Current Appointment</span>
+          <strong>${escapeHtml(formatDate(currentDate))} · ${escapeHtml(formatTime(currentTime))} · ${escapeHtml(dentist)}</strong>
+        </div>
+        <div class="reschedule-detail-item full">
+          <span>Requested New Schedule</span>
+          <strong>${preferredDate && preferredTime ? `${escapeHtml(formatDate(preferredDate))} · ${escapeHtml(formatTime(preferredTime))}` : "No preferred schedule provided"}</strong>
+        </div>
+        ${
+          status === "approved" && approvedDate && approvedTime
+            ? `
+        <div class="reschedule-detail-item full">
+          <span>Approved Schedule</span>
+          <strong>${escapeHtml(formatDate(approvedDate))} · ${escapeHtml(formatTime(approvedTime))}</strong>
+        </div>
+        `
+            : ""
+        }
+        <div class="reschedule-detail-item full">
+          <span>Message to Clinic</span>
+          <p>${escapeHtml(latest?.message || "No message provided.")}</p>
+        </div>
+      `;
   rescheduleDetailsRequestId = latest?.id || latest?.request_id || null;
   const confirmButton = document.getElementById("confirmRescheduleDetails");
   if (confirmButton) {

@@ -4,7 +4,6 @@ const SLOT_MIN = 30;
 const APPOINTMENT_STATUS = {
   SCHEDULED: "scheduled",
   IN_CONSULTATION: "in_consultation",
-  READY_COMPLETE: "ready_complete",
   COMPLETED: "completed",
   NO_SHOW: "no_show",
   CANCELLED: "cancelled",
@@ -371,10 +370,9 @@ async function hydrateAppointmentsFromDatabase() {
   }
 
   try {
-    const remoteAppointments =
-      await window.DentaNuevaAppointmentDatabase.load({
-        scope: "doctor_appointments",
-      });
+    const remoteAppointments = await window.DentaNuevaAppointmentDatabase.load({
+      scope: "doctor_appointments",
+    });
 
     appointments = Array.isArray(remoteAppointments)
       ? remoteAppointments.map(normalizeAppointment)
@@ -384,10 +382,7 @@ async function hydrateAppointmentsFromDatabase() {
     renderTimeline();
     renderWaitingQueue();
   } catch (error) {
-    console.error(
-      "Unable to load doctor appointments from database:",
-      error,
-    );
+    console.error("Unable to load doctor appointments from database:", error);
 
     appointments = [];
   }
@@ -560,12 +555,18 @@ function updateAutomaticAppointmentStatuses() {
   const now = new Date();
   const todayKey = dateToKey(now);
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
   let changed = false;
+
   appointments.forEach((appt) => {
     if (appt.date !== todayKey) {
       return;
     }
+
     const appointmentStart = timeToMinutes(appt.start);
+    const appointmentEnd = getAppointmentEnd(appt);
+
+    // Automatic No Show
     if (
       appt.status === APPOINTMENT_STATUS.SCHEDULED &&
       currentMinutes >= appointmentStart + 15
@@ -573,11 +574,27 @@ function updateAutomaticAppointmentStatuses() {
       appt.status = APPOINTMENT_STATUS.NO_SHOW;
       appt.noShowAt = new Date().toISOString();
       changed = true;
+      return;
+    }
+
+    // Automatic Completed
+    if (
+      appt.status === APPOINTMENT_STATUS.IN_CONSULTATION &&
+      currentMinutes >= appointmentEnd
+    ) {
+      appt.status = APPOINTMENT_STATUS.COMPLETED;
+      appt.checkedIn = true;
+      appt.consultationStarted = false;
+      appt.manualReadyComplete = false;
+      appt.completedAt = new Date().toISOString();
+      changed = true;
     }
   });
+
   if (changed) {
     saveAppointmentsToDatabase();
   }
+
   return changed;
 }
 function getStatusLabel(status) {
@@ -588,8 +605,6 @@ function getStatusLabel(status) {
       return "Cancelled";
     case APPOINTMENT_STATUS.IN_CONSULTATION:
       return "In Consultation";
-    case APPOINTMENT_STATUS.READY_COMPLETE:
-      return "Ready to Complete";
     case APPOINTMENT_STATUS.COMPLETED:
       return "Completed";
     case APPOINTMENT_STATUS.NO_SHOW:
@@ -616,9 +631,7 @@ function appointmentBelongsToCurrentDoctor(appt) {
   ]
     .filter(
       (value) =>
-        value !== undefined &&
-        value !== null &&
-        String(value).trim() !== "",
+        value !== undefined && value !== null && String(value).trim() !== "",
     )
     .map((value) => String(value).trim().toLowerCase());
 
@@ -631,9 +644,7 @@ function appointmentBelongsToCurrentDoctor(appt) {
   ]
     .filter(
       (value) =>
-        value !== undefined &&
-        value !== null &&
-        String(value).trim() !== "",
+        value !== undefined && value !== null && String(value).trim() !== "",
     )
     .map((value) => String(value).trim().toLowerCase());
 
@@ -684,12 +695,9 @@ function filteredAppts() {
 
   const searchInput = document.getElementById("searchInput");
 
-  const searchTerm = searchInput
-    ? searchInput.value.trim().toLowerCase()
-    : "";
+  const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
   let filtered = appointments.filter((appt) => {
-
     /*
      * Only show appointments assigned
      * to the currently logged-in doctor.
@@ -707,7 +715,6 @@ function filteredAppts() {
     }
 
     return !appointments.some((replacement) => {
-
       if (replacement.id === appt.id) {
         return false;
       }
@@ -730,22 +737,14 @@ function filteredAppts() {
 
       const cancelledStart = timeToMinutes(appt.start);
 
-      const replacementStart = timeToMinutes(
-        replacement.start
-      );
+      const replacementStart = timeToMinutes(replacement.start);
 
-      const cancelledEnd =
-        cancelledStart +
-        Number(appt.duration || 30);
+      const cancelledEnd = cancelledStart + Number(appt.duration || 30);
 
       const replacementEnd =
-        replacementStart +
-        Number(replacement.duration || 30);
+        replacementStart + Number(replacement.duration || 30);
 
-      return (
-        replacementStart < cancelledEnd &&
-        replacementEnd > cancelledStart
-      );
+      return replacementStart < cancelledEnd && replacementEnd > cancelledStart;
     });
   });
 
@@ -761,7 +760,6 @@ function filteredAppts() {
    */
   if (searchTerm) {
     filtered = filtered.filter((appt) => {
-
       const patientName = String(appt.patient || "")
         .trim()
         .toLowerCase();
@@ -771,8 +769,7 @@ function filteredAppts() {
         .toLowerCase();
 
       return (
-        patientName.includes(searchTerm) ||
-        serviceType.includes(searchTerm)
+        patientName.includes(searchTerm) || serviceType.includes(searchTerm)
       );
     });
   }
@@ -781,10 +778,7 @@ function filteredAppts() {
    * Sort by appointment time.
    */
   filtered.sort((a, b) => {
-    return (
-      timeToMinutes(a.start) -
-      timeToMinutes(b.start)
-    );
+    return timeToMinutes(a.start) - timeToMinutes(b.start);
   });
 
   return filtered;
@@ -1122,9 +1116,6 @@ function openViewModal(id) {
     if (appt.status === APPOINTMENT_STATUS.IN_CONSULTATION) {
       status.classList.add("in-consultation");
     }
-    if (appt.status === APPOINTMENT_STATUS.READY_COMPLETE) {
-      status.classList.add("ready-complete");
-    }
     if (appt.status === APPOINTMENT_STATUS.COMPLETED) {
       status.classList.add("completed");
     }
@@ -1150,26 +1141,19 @@ function createAppointmentStatusButton(appt) {
       wrapper.appendChild(badge);
       return wrapper;
     }
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = "appt-status-btn status-checkin";
     button.innerHTML = '<i class="fa-solid fa-user-check"></i> Check In';
+
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       checkInAppointment(appt.id);
     });
+
     wrapper.appendChild(button);
-    if (isNoShowEligible(appt)) {
-      const noShowButton = document.createElement("button");
-      noShowButton.type = "button";
-      noShowButton.className = "appt-status-btn status-noshow";
-      noShowButton.innerHTML = '<i class="fa-solid fa-user-slash"></i> No Show';
-      noShowButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        openStatusConfirmation(appt.id, "markNoShow");
-      });
-      wrapper.appendChild(noShowButton);
-    }
+
     return wrapper;
   }
   if (appt.status === APPOINTMENT_STATUS.IN_CONSULTATION) {
@@ -1184,39 +1168,12 @@ function createAppointmentStatusButton(appt) {
     wrapper.appendChild(button);
     return wrapper;
   }
-  if (appt.status === APPOINTMENT_STATUS.READY_COMPLETE) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "appt-status-btn status-complete";
-    button.innerHTML = '<i class="fa-solid fa-circle-check"></i> Complete';
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      openStatusConfirmation(appt.id, "completeAppointment");
-    });
-    wrapper.appendChild(button);
-    return wrapper;
-  }
   if (appt.status === APPOINTMENT_STATUS.COMPLETED) {
     const badge = document.createElement("span");
     badge.className = "appt-status-btn status-completed";
     badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completed';
     wrapper.appendChild(badge);
     return wrapper;
-  }
-  if (appt.status === APPOINTMENT_STATUS.NO_SHOW && isToday(appt.date)) {
-    const now = new Date();
-    if (now.getHours() * 60 + now.getMinutes() < getAppointmentEnd(appt)) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "appt-status-btn status-checkin";
-      button.innerHTML = '<i class="fa-solid fa-user-check"></i> Late Check In';
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        checkInAppointment(appt.id);
-      });
-      wrapper.appendChild(button);
-      return wrapper;
-    }
   }
   if (appt.status === APPOINTMENT_STATUS.NO_SHOW) {
     const badge = document.createElement("span");
@@ -1268,6 +1225,11 @@ function checkInAppointment(id) {
     return;
   }
   appt.status = APPOINTMENT_STATUS.IN_CONSULTATION;
+  appt.checkedIn = true;
+  appt.checkedInAt = new Date().toISOString();
+  appt.consultationStarted = true;
+  appt.manualReadyComplete = false;
+
   saveAppointmentsToDatabase();
   renderAll();
   showToast(`${appt.patient} has been checked in.`);
@@ -1289,18 +1251,6 @@ function openStatusConfirmation(id, actionType) {
     message.textContent = `Are you sure you want to finish ${appt.patient}'s consultation?`;
     button.textContent = "Yes, Finish";
     icon.innerHTML = '<i class="fa-solid fa-stethoscope"></i>';
-  }
-  if (actionType === "completeAppointment") {
-    title.textContent = "Complete Appointment?";
-    message.textContent = `Are you sure you want to mark ${appt.patient}'s appointment as completed?`;
-    button.textContent = "Yes, Complete";
-    icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-  }
-  if (actionType === "markNoShow") {
-    title.textContent = "Mark as No Show?";
-    message.textContent = `${appt.patient}'s appointment was not checked in on the scheduled date. Marking this as No Show will close the appointment as missed.`;
-    button.textContent = "Yes, Mark No Show";
-    icon.innerHTML = '<i class="fa-solid fa-user-slash"></i>';
   }
   overlay.classList.add("show");
 }
@@ -1346,35 +1296,18 @@ function confirmStatusAction() {
       closeStatusConfirmation();
       return;
     }
-    appt.status = APPOINTMENT_STATUS.READY_COMPLETE;
-    saveAppointmentsToDatabase();
-    closeStatusConfirmation();
-    renderAll();
-    showToast(`${appt.patient}'s consultation is finished.`);
-    return;
-  }
-  if (statusActionType === "completeAppointment") {
-    if (appt.status !== APPOINTMENT_STATUS.READY_COMPLETE) {
-      closeStatusConfirmation();
-      return;
-    }
+
     appt.status = APPOINTMENT_STATUS.COMPLETED;
+    appt.checkedIn = true;
+    appt.consultationStarted = false;
+    appt.manualReadyComplete = false;
+
     saveAppointmentsToDatabase();
     closeStatusConfirmation();
     renderAll();
-    showToast(`${appt.patient}'s appointment is now completed.`);
+
+    showToast(`${appt.patient}'s consultation is now Completed.`);
     return;
-  }
-  if (statusActionType === "markNoShow") {
-    if (appt.status !== APPOINTMENT_STATUS.SCHEDULED || !isToday(appt.date)) {
-      closeStatusConfirmation();
-      return;
-    }
-    appt.status = APPOINTMENT_STATUS.NO_SHOW;
-    saveAppointmentsToDatabase();
-    closeStatusConfirmation();
-    renderAll();
-    showToast(`${appt.patient} has been marked as No Show.`);
   }
 }
 function getInitials(name) {

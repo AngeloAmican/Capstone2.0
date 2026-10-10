@@ -172,182 +172,10 @@ if ($method === 'GET') {
         $stmt->close();
         appointmentResponse(true, 'Doctor schedule loaded.', $appointments);
     }
-    if ($scope === 'doctor_appointments' && $role === 'doctor') {
-
-            /*
-            * The logged-in doctor has two possible identities:
-            *
-            * 1. tbl_users.user_id  -> account ID
-            * 2. tbl_users.doctor_id -> doctor code (DOC-xxxx)
-            *
-            * Resolve both from the authenticated session first.
-            */
-
-            $doctorStmt = $conn->prepare("
-                SELECT
-                    user_id,
-                    doctor_id
-                FROM tbl_users
-                WHERE user_id = ?
-                AND LOWER(role) = 'doctor'
-                LIMIT 1
-            ");
-
-            if (!$doctorStmt) {
-                appointmentResponse(
-                    false,
-                    'Unable to prepare doctor identity query.',
-                    null,
-                    500
-                );
-            }
-
-            $doctorStmt->bind_param('i', $userId);
-            $doctorStmt->execute();
-
-            $doctorResult = $doctorStmt->get_result();
-            $doctorAccount = $doctorResult->fetch_assoc();
-
-            $doctorStmt->close();
-
-            if (!$doctorAccount) {
-                appointmentResponse(
-                    false,
-                    'Authenticated doctor account could not be found.',
-                    null,
-                    403
-                );
-            }
-
-            $authenticatedUserId = (int) $doctorAccount['user_id'];
-            $authenticatedDoctorId = trim((string) ($doctorAccount['doctor_id'] ?? ''));
-
-            /*
-            * Load only appointments assigned to this doctor.
-            *
-            * Normal/current records:
-            *   a.doctor_id = tbl_users.user_id
-            *
-            * Older/legacy records:
-            *   a.doctor_id may contain the doctor code.
-            *
-            * We support both without exposing another doctor's appointments.
-            */
-
-            $sql = "
-                SELECT
-                    a.*,
-                    p.first_name,
-                    p.last_name,
-
-                    COALESCE(
-                        NULLIF(u.doctor_id, ''),
-                        CONCAT('DOC-', LPAD(u.user_id, 4, '0'))
-                    ) AS doctor_code,
-
-                    TRIM(
-                        COALESCE(
-                            u.name,
-                            CONCAT(
-                                COALESCE(u.firstname, ''),
-                                ' ',
-                                COALESCE(u.lastname, '')
-                            )
-                        )
-                    ) AS doctor_name
-
-                FROM tbl_patient_appointments a
-
-                JOIN tbl_patients p
-                    ON p.patient_id = a.patient_id
-
-                LEFT JOIN tbl_users u
-                    ON (
-                        u.user_id = a.doctor_id
-                        OR (
-                            ? <> ''
-                            AND u.doctor_id = a.doctor_id
-                        )
-                    )
-
-                WHERE
-                    (
-                        a.doctor_id = ?
-                        OR (
-                            ? <> ''
-                            AND a.doctor_id = ?
-                        )
-                    )
-
-                ORDER BY
-                    a.appointment_date ASC,
-                    a.appointment_time ASC,
-                    a.appointment_id ASC
-            ";
-
-            $stmt = $conn->prepare($sql);
-
-            if (!$stmt) {
-                appointmentResponse(
-                    false,
-                    'Unable to prepare doctor appointments query: ' . $conn->error,
-                    null,
-                    500
-                );
-            }
-
-            /*
-            * Parameters:
-            *
-            * 1. authenticatedDoctorId -> used by JOIN
-            * 2. authenticatedUserId   -> normal appointment assignment
-            * 3. authenticatedDoctorId -> enables legacy doctor-code matching
-            * 4. authenticatedDoctorId -> actual legacy value comparison
-            */
-
-            $stmt->bind_param(
-                'siss',
-                $authenticatedDoctorId,
-                $authenticatedUserId,
-                $authenticatedDoctorId,
-                $authenticatedDoctorId
-            );
-
-            if (!$stmt->execute()) {
-                $error = $stmt->error;
-                $stmt->close();
-
-                appointmentResponse(
-                    false,
-                    'Unable to load doctor appointments: ' . $error,
-                    null,
-                    500
-                );
-            }
-
-            $result = $stmt->get_result();
-
-            $appointments = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $appointments[] = appointmentPayload($row);
-            }
-
-            $stmt->close();
-
-            appointmentResponse(
-                true,
-                'Doctor appointments loaded.',
-                $appointments
-            );
-        }
 
     $patientId = trim((string) ($_GET['patient_id'] ?? ''));
     if ($role === 'user') {
-        $patientId = trim((string) ($_SESSION['patient_id'] ?? $patientId));
-        if ($patientId === '') {
-            $patientId = 'PN-' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
-        }
+        $patientId = 'PN-' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
     }
     if ($patientId !== '') {
         appointmentPatientAccess($conn, $patientId, $userId, $role);
@@ -488,31 +316,8 @@ try {
         appointmentPatientAccess($conn, $patientId, $userId, $role);
         $doctorValue = (string) ($appointment['dentist_id'] ?? $appointment['dentistId'] ?? $appointment['doctor_id'] ?? $appointment['doctorId'] ?? $appointment['dentist'] ?? '');
         $doctorUserId = appointmentDoctorUserId($conn, $doctorValue);
-
         if ($doctorUserId === null) {
-            $numericAppointmentId = ctype_digit($appointmentId) ? (int) $appointmentId : 0;
-
-            $existingStmt = $conn->prepare(
-                'SELECT doctor_id FROM tbl_patient_appointments WHERE appointment_uid = ? OR appointment_id = ? LIMIT 1'
-            );
-
-            if (!$existingStmt) {
-                throw new RuntimeException('Unable to check existing appointment doctor.');
-            }
-
-            $existingStmt->bind_param('si', $appointmentId, $numericAppointmentId);
-            $existingStmt->execute();
-
-            $existingRow = $existingStmt->get_result()->fetch_assoc();
-            $existingStmt->close();
-
-            if ($existingRow) {
-                $doctorUserId = $existingRow['doctor_id'] !== null
-                    ? (int) $existingRow['doctor_id']
-                    : 0;
-            } else {
-                throw new RuntimeException('A valid doctor is required before saving an appointment.');
-            }
+            throw new RuntimeException('A valid doctor is required before saving an appointment.');
         }
         $date = (string) ($appointment['date'] ?? $appointment['appointment_date'] ?? '');
         $time = (string) ($appointment['start'] ?? $appointment['time'] ?? $appointment['appointment_time'] ?? '');
@@ -527,7 +332,8 @@ try {
         $paymentStatus = (string) ($appointment['paymentStatus'] ?? 'unpaid');
         $paymentAmount = (float) ($appointment['paymentAmount'] ?? 0);
         $cancelledAt = (string) ($appointment['cancelledAt'] ?? $appointment['cancelled_at'] ?? '');
-        $stmt = $conn->prepare('INSERT INTO tbl_patient_appointments (appointment_uid, patient_id, doctor_id, appointment_date, appointment_time, service_type, duration_minutes, status, checked_in, checked_in_at, consultation_started, manual_ready_complete, payment_status, payment_amount, cancelled_at, metadata) VALUES (?, ?, NULLIF(?, 0), NULLIF(?, ""), NULLIF(?, ""), ?, ?, ?, ?, NULLIF(?, ""), ?, ?, ?, ?, NULLIF(?, ""), ?) ON DUPLICATE KEY UPDATE patient_id = VALUES(patient_id), doctor_id = COALESCE(VALUES(doctor_id), doctor_id), appointment_date = VALUES(appointment_date), appointment_time = VALUES(appointment_time), service_type = VALUES(service_type), duration_minutes = VALUES(duration_minutes), status = VALUES(status), checked_in = VALUES(checked_in), checked_in_at = VALUES(checked_in_at), consultation_started = VALUES(consultation_started), manual_ready_complete = VALUES(manual_ready_complete), payment_status = VALUES(payment_status), payment_amount = VALUES(payment_amount), cancelled_at = VALUES(cancelled_at), metadata = VALUES(metadata), updated_at = NOW()');        if (!$stmt) {
+        $stmt = $conn->prepare('INSERT INTO tbl_patient_appointments (appointment_uid, patient_id, doctor_id, appointment_date, appointment_time, service_type, duration_minutes, status, checked_in, checked_in_at, consultation_started, manual_ready_complete, payment_status, payment_amount, cancelled_at, metadata) VALUES (?, ?, ?, NULLIF(?, ""), NULLIF(?, ""), ?, ?, ?, ?, NULLIF(?, ""), ?, ?, ?, ?, NULLIF(?, ""), ?) ON DUPLICATE KEY UPDATE patient_id = VALUES(patient_id), doctor_id = COALESCE(VALUES(doctor_id), doctor_id), appointment_date = VALUES(appointment_date), appointment_time = VALUES(appointment_time), service_type = VALUES(service_type), duration_minutes = VALUES(duration_minutes), status = VALUES(status), checked_in = VALUES(checked_in), checked_in_at = VALUES(checked_in_at), consultation_started = VALUES(consultation_started), manual_ready_complete = VALUES(manual_ready_complete), payment_status = VALUES(payment_status), payment_amount = VALUES(payment_amount), cancelled_at = VALUES(cancelled_at), metadata = VALUES(metadata), updated_at = NOW()');
+        if (!$stmt) {
             throw new RuntimeException('Appointment query could not be prepared: ' . $conn->error);
         }
         $stmt->bind_param('ssisssisisiisdss', $appointmentId, $patientId, $doctorUserId, $date, $time, $service, $duration, $status, $checkedIn, $checkedInAt, $consultationStarted, $readyComplete, $paymentStatus, $paymentAmount, $cancelledAt, $metadata);

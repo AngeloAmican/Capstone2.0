@@ -1,46 +1,32 @@
 document.addEventListener("DOMContentLoaded", () => {
   loadSidebar();
 });
-
 async function loadSidebar(activePageKey) {
   const container = document.getElementById("sidebar-container");
-
   if (!container) {
     return;
   }
-
   try {
     const response = await fetch("../navigation_bar/sidebar.html");
-
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
-
     const html = await response.text();
     const tempDiv = document.createElement("div");
-
     tempDiv.innerHTML = html;
-
     const logoutModal = tempDiv.querySelector("#logoutModalBackdrop");
-
     if (logoutModal) {
       logoutModal.remove();
     }
-
     container.innerHTML = tempDiv.innerHTML;
-
     if (!document.getElementById("logoutModalBackdrop") && logoutModal) {
       document.body.appendChild(logoutModal);
     }
-
     setSidebarLinks();
     await loadActivePatientProfile();
-
     let pageKey = activePageKey;
-
     if (!pageKey) {
       const currentPath = window.location.pathname;
-
       if (currentPath.includes("dashboard")) {
         pageKey = "dashboard";
       } else if (currentPath.includes("appointment")) {
@@ -51,34 +37,27 @@ async function loadSidebar(activePageKey) {
         pageKey = "payments";
       }
     }
-
     if (pageKey) {
       const activeLink = container.querySelector(`[data-page="${pageKey}"]`);
-
       if (activeLink) {
         activeLink.classList.add("active");
       }
     }
-
     applySavedSidebarState();
     initSidebarLogic();
   } catch (error) {
     console.error("Failed to load patient sidebar navigation:", error);
   }
 }
-
 function getAppBase() {
   const pathname = window.location.pathname;
   const patientsIndex = pathname.indexOf("/patients/");
-
   if (patientsIndex >= 0) {
     return pathname.substring(0, patientsIndex + 1);
   }
-
   const pathParts = pathname.split("/").filter(Boolean);
   return pathParts.length ? `/${pathParts[0]}/` : "/";
 }
-
 function setSidebarLinks() {
   const appBase = getAppBase();
   document
@@ -87,36 +66,27 @@ function setSidebarLinks() {
       link.href = `${appBase}${link.dataset.path}`;
     });
 }
-
 function getInitials(name) {
   if (!name) {
     return "PT";
   }
-
   const cleanName = String(name).trim();
-
   if (!cleanName) {
     return "PT";
   }
-
   const parts = cleanName.split(/\s+/);
-
   if (parts.length === 1) {
     return parts[0].substring(0, 2).toUpperCase();
   }
-
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
-
 async function loadActivePatientProfile() {
   const nameEl = document.getElementById("activePatientName");
   const imageEl = document.getElementById("activePatientImage");
   const initialsEl = document.getElementById("activePatientInitials");
-
   if (!nameEl) {
     return;
   }
-
   try {
     const response = await fetch(
       `${getAppBase()}patients/navigation_bar/sidebar.php?role=patient`,
@@ -155,7 +125,6 @@ async function loadActivePatientProfile() {
         imageEl.removeAttribute("src");
         imageEl.style.display = "none";
       }
-
       if (initialsEl) {
         initialsEl.textContent = initials;
         initialsEl.style.display = "flex";
@@ -165,35 +134,28 @@ async function loadActivePatientProfile() {
     console.error("Failed to load patient account:", error);
   }
 }
-
 function applySavedSidebarState() {
   const sidebar = document.getElementById("sidebar");
   const toggleIcon = document.getElementById("toggleIcon");
-
   if (!sidebar) {
     return;
   }
-
-
   if (window.innerWidth > 768) {
-      sidebar.classList.remove("collapsed");
-      if (toggleIcon) {
-        toggleIcon.className = "fa-solid fa-chevron-left";
+    sidebar.classList.remove("collapsed");
+    if (toggleIcon) {
+      toggleIcon.className = "fa-solid fa-chevron-left";
     }
   }
 }
-
 function initSidebarLogic() {
   const sidebar = document.getElementById("sidebar");
   const sidebarToggle = document.getElementById("sidebarToggle");
   const toggleIcon = document.getElementById("toggleIcon");
   const sidebarOverlay = document.getElementById("sidebarOverlay");
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
-
   if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
-
       if (sidebar.classList.contains("collapsed")) {
         if (toggleIcon) {
           toggleIcon.className = "fa-solid fa-chevron-right";
@@ -205,30 +167,24 @@ function initSidebarLogic() {
       }
     });
   }
-
   if (mobileMenuToggle && sidebar) {
     mobileMenuToggle.addEventListener("click", () => {
       sidebar.classList.toggle("mobile-open");
-
       if (sidebarOverlay) {
         sidebarOverlay.classList.toggle("active");
       }
     });
   }
-
   if (sidebarOverlay) {
     sidebarOverlay.addEventListener("click", () => {
       sidebar.classList.remove("mobile-open");
       sidebarOverlay.classList.remove("active");
     });
   }
-
   const profileTrigger = document.getElementById("activePatientProfileTrigger");
-
   if (profileTrigger) {
     profileTrigger.addEventListener("click", (event) => {
       event.preventDefault();
-
       if (typeof window.openProfileModal === "function") {
         window.openProfileModal();
       } else {
@@ -237,25 +193,20 @@ function initSidebarLogic() {
     });
   }
 }
-
 document.addEventListener("click", async (e) => {
   const logoutBtn = e.target.closest(".btn-logout");
   const cancelBtn = e.target.closest("#logoutCancelBtn");
   const confirmBtn = e.target.closest("#logoutConfirmBtn");
   const backdrop = document.getElementById("logoutModalBackdrop");
-
   if (logoutBtn) {
     e.preventDefault();
-
     if (backdrop) {
       backdrop.classList.add("active");
       document.body.classList.add("logout-modal-open");
     }
   }
-
   if (cancelBtn) {
     e.preventDefault();
-
     if (backdrop) {
       backdrop.classList.remove("active");
       document.body.classList.remove("logout-modal-open");
@@ -265,10 +216,8 @@ document.addEventListener("click", async (e) => {
     backdrop.classList.remove("active");
     document.body.classList.remove("logout-modal-open");
   }
-
   if (confirmBtn) {
     e.preventDefault();
-
     try {
       await fetch(`${getAppBase()}patients/navigation_bar/sidebar.php`, {
         method: "POST",

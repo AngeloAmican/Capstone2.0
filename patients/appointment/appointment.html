@@ -737,12 +737,14 @@
                   />
                 </div>
               </div>
-              <div class="record-edit-section-heading">
+              <div class="record-edit-section-heading consent-section-heading">
                 <div>
                   <span class="record-edit-step">05</span>
                   <div>
                     <h4>Consent</h4>
-                    <p>Confirm that the information you provided is accurate.</p>
+                    <p>
+                      Confirm that the information you provided is accurate.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -820,11 +822,12 @@
                 <span class="record-edit-step">01</span>
                 <div>
                   <h4>Personal Information</h4>
-                  <p>Make sure your personal information is complete and correct.</p>
+                  <p>
+                    Make sure your personal information is complete and correct.
+                  </p>
                 </div>
               </div>
             </div>
-
             <div class="record-edit-form-row">
               <div class="record-edit-field">
                 <label for="recordEditFirstName">First Name</label>
@@ -835,7 +838,6 @@
                   required
                 />
               </div>
-
               <div class="record-edit-field">
                 <label for="recordEditLastName">Last Name</label>
                 <input
@@ -846,17 +848,11 @@
                 />
               </div>
             </div>
-
             <div class="record-edit-form-row">
               <div class="record-edit-field">
                 <label for="recordEditDateOfBirth">Date of Birth</label>
-                <input
-                  type="date"
-                  id="recordEditDateOfBirth"
-                  required
-                />
+                <input type="date" id="recordEditDateOfBirth" required />
               </div>
-
               <div class="record-edit-field">
                 <label for="recordEditGender">Gender</label>
                 <select id="recordEditGender" required>
@@ -867,7 +863,6 @@
                 </select>
               </div>
             </div>
-
             <div class="record-edit-form-row">
               <div class="record-edit-field">
                 <label for="recordEditPhone">Phone Number</label>
@@ -878,7 +873,6 @@
                   required
                 />
               </div>
-
               <div class="record-edit-field">
                 <label for="recordEditEmail">Email Address</label>
                 <input
@@ -889,7 +883,6 @@
                 />
               </div>
             </div>
-
             <div class="record-edit-field">
               <label for="recordEditAddress">Complete Address</label>
               <input
@@ -899,10 +892,11 @@
                 required
               />
             </div>
-
             <div class="record-edit-form-row">
               <div class="record-edit-field">
-                <label for="recordEditEmergencyName">Emergency Contact Name</label>
+                <label for="recordEditEmergencyName"
+                  >Emergency Contact Name</label
+                >
                 <input
                   type="text"
                   id="recordEditEmergencyName"
@@ -910,7 +904,6 @@
                   required
                 />
               </div>
-
               <div class="record-edit-field">
                 <label for="recordEditEmergencyContact">
                   Emergency Contact No.
@@ -923,12 +916,11 @@
                 />
               </div>
             </div>
-
             <div class="record-edit-info">
               <i class="fa-solid fa-circle-info"></i>
               <span>
-                This information will be used to identify your patient record and
-                connect it with your appointments and clinic records.
+                This information will be used to identify your patient record
+                and connect it with your appointments and clinic records.
               </span>
             </div>
           </section>
@@ -1226,13 +1218,6 @@
         </div>
         <div class="modal-body" id="appointmentDetailBody"></div>
         <div class="modal-actions detail-actions">
-          <button
-            type="button"
-            class="btn-secondary"
-            id="closeAppointmentDetail"
-          >
-            Close
-          </button>
           <button type="button" class="btn-delete" id="deleteAppointmentBtn">
             <i class="fa-solid fa-trash"></i>
             Delete
@@ -1256,6 +1241,9 @@
       <div class="modal-container cancel-confirm-modal">
         <div class="modal-header">
           <div>
+            <span class="cancel-confirm-icon">
+              <i class="fa-solid fa-calendar-xmark"></i>
+            </span>
             <span class="modal-kicker">Cancel Appointment</span>
             <h3>Cancel this appointment?</h3>
             <p id="cancelAppointmentConfirmMessage">

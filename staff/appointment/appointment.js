@@ -3,12 +3,11 @@ const PATIENT_RECORD_API = "../../api/patient_records.php";
 const DOCTORS_API = "../../api/doctors.php";
 const DOCTORS_STORAGE_KEY = "dentanueva_doctors";
 const START_HOUR = 10;
-const FIRST_BOOKABLE_HOUR = 10.5;
-const END_HOUR = 20;
+const FIRST_BOOKABLE_HOUR = 10;
+const END_HOUR = 17.5;
 const SLOT_MIN = 30;
 const NO_SHOW_GRACE_PERIOD_MIN = 15;
 const NO_SHOW_TESTING_MODE = false;
-const FINANCE_PAGE_URL = "../finance/finance.html";
 const ALL_DENTISTS_FILTER = "all";
 const SERVICE_DURATIONS = {
   Consultation: 30,
@@ -74,7 +73,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAutomaticAppointmentStatuses();
     renderTimeline();
     renderWaitingQueue();
-    renderRealtimeDentistsDuty();
     if (
       ["new", "edit", "reschedule"].includes(modalMode) &&
       document.getElementById("overlay")?.classList.contains("show")
@@ -295,7 +293,6 @@ function setupEvents() {
       renderScheduleOverview();
       renderTimeline();
       renderWaitingQueue();
-      renderRealtimeDentistsDuty();
     });
   }
   const serviceInput = document.getElementById("f_type");
@@ -412,7 +409,6 @@ function normalizePatient(patient) {
     patient.userId ||
     patient.user_id ||
     `P${String(Date.now()).slice(-6)}`;
-
   return {
     ...patient,
     id: String(patientId),
@@ -443,9 +439,7 @@ function getPatientFullName(patient) {
 }
 function findPatientById(patientId) {
   if (!patientId) return null;
-
   const value = String(patientId).trim().toLowerCase();
-
   return (
     patients.find((patient) =>
       [
@@ -677,7 +671,6 @@ function removeAppointmentsForDeletedPatients() {
   if (!Array.isArray(appointments)) {
     return;
   }
-
   appointments = appointments.filter((appt) => {
     return (
       !!appt &&
@@ -714,9 +707,9 @@ function normalizeAppointment(appt) {
     canceled: APPOINTMENT_STATUS.CANCELLED,
     in_consultation: APPOINTMENT_STATUS.IN_CONSULTATION,
     "in-consultation": APPOINTMENT_STATUS.IN_CONSULTATION,
-    ready_complete: APPOINTMENT_STATUS.READY_COMPLETE,
-    "ready-to-complete": APPOINTMENT_STATUS.READY_COMPLETE,
-    ready_to_complete: APPOINTMENT_STATUS.READY_COMPLETE,
+    ready_complete: APPOINTMENT_STATUS.COMPLETED,
+    "ready-to-complete": APPOINTMENT_STATUS.COMPLETED,
+    ready_to_complete: APPOINTMENT_STATUS.COMPLETED,
     complete: APPOINTMENT_STATUS.COMPLETED,
     completed: APPOINTMENT_STATUS.COMPLETED,
     no_show: APPOINTMENT_STATUS.NO_SHOW,
@@ -780,6 +773,9 @@ function normalizeAppointment(appt) {
       : Array.isArray(appt.reschedule_history)
         ? appt.reschedule_history
         : [],
+    databaseAppointmentId:
+      Number(appt.databaseAppointmentId ?? appt.database_appointment_id ?? 0) ||
+      null,
   };
   if (
     normalized.dentist === "villanueva" &&
@@ -1027,16 +1023,13 @@ function fmtTime(time) {
   const text = String(time).trim();
   const match = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
   if (!match) return text;
-
   let hour = Number(match[1]);
   const minute = Number(match[2]);
   const suffix = (match[4] || (hour >= 12 ? "PM" : "AM")).toUpperCase();
-
   if (match[4]) {
     if (suffix === "AM" && hour === 12) hour = 0;
     if (suffix === "PM" && hour < 12) hour += 12;
   }
-
   return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${suffix}`;
 }
 function formatDateLong(dateKey) {
@@ -1103,7 +1096,6 @@ function findPatientBookingConflict(patientId, date, start, ignoreId = null) {
     .trim()
     .toLowerCase();
   if (!normalizedId) return null;
-
   return (
     appointments.find((appt) => {
       if (String(appt.id) === String(ignoreId)) {
@@ -1133,7 +1125,6 @@ function findPatientBookingConflict(patientId, date, start, ignoreId = null) {
       if (appt.date !== date) {
         return false;
       }
-
       const duration = Number(
         document.getElementById("f_duration")?.value || appt.duration || 30,
       );
@@ -1163,10 +1154,13 @@ function updateAutomaticAppointmentStatuses() {
       const hasEnded =
         appt.date < todayKey ||
         (appt.date === todayKey && currentTime >= appointmentEnd);
+
       if (!hasEnded) return;
-      appt.status = APPOINTMENT_STATUS.READY_COMPLETE;
+
+      appt.status = APPOINTMENT_STATUS.COMPLETED;
       appt.consultationStarted = false;
-      appt.manualReadyComplete = true;
+      appt.manualReadyComplete = false;
+
       syncAppointmentToPatient(appt);
       changed = true;
     }
@@ -1180,14 +1174,19 @@ function getStatusLabel(status) {
   switch (status) {
     case APPOINTMENT_STATUS.SCHEDULED:
       return "Scheduled";
+
     case APPOINTMENT_STATUS.IN_CONSULTATION:
       return "In Consultation";
-    case APPOINTMENT_STATUS.READY_COMPLETE:
-      return "Complete";
+
     case APPOINTMENT_STATUS.COMPLETED:
       return "Completed";
+
     case APPOINTMENT_STATUS.NO_SHOW:
       return "No Show";
+
+    case APPOINTMENT_STATUS.CANCELLED:
+      return "Cancelled";
+
     default:
       return "Scheduled";
   }
@@ -1282,15 +1281,10 @@ function formatSlotLabel(time) {
   return fmtTime(time);
 }
 function getAvailableTimeSlots(date, dentist, duration) {
-  const safeDuration = Number(duration) > 0 ? Number(duration) : SLOT_MIN;
   const clinicStart = FIRST_BOOKABLE_HOUR * 60;
   const clinicEnd = END_HOUR * 60;
   const slots = [];
-  for (
-    let minutes = clinicStart;
-    minutes + safeDuration <= clinicEnd;
-    minutes += SLOT_MIN
-  ) {
+  for (let minutes = clinicStart; minutes <= clinicEnd; minutes += SLOT_MIN) {
     slots.push(minutesToTime(minutes));
   }
   return slots;
@@ -1523,7 +1517,6 @@ async function openNewModal(date = null, time = null) {
   const modalTitle = document.getElementById("modalTitle");
   const modalSubtitle = document.getElementById("modalSubtitle");
   const saveBtn = document.getElementById("saveBtn");
-  const deleteBtn = document.getElementById("deleteBtn");
   const requestRescheduleBtn = document.getElementById("requestRescheduleBtn");
   const viewRescheduleRequestBtn = document.getElementById(
     "viewRescheduleRequestBtn",
@@ -1536,7 +1529,6 @@ async function openNewModal(date = null, time = null) {
   saveBtn.style.display = "inline-flex";
   saveBtn.textContent = "Save Appointment";
   saveBtn.disabled = false;
-  deleteBtn.style.display = "none";
   requestRescheduleBtn.style.display = "none";
   if (viewRescheduleRequestBtn) {
     viewRescheduleRequestBtn.style.display = "none";
@@ -1585,7 +1577,6 @@ function openViewModal(id) {
   const modalTitle = document.getElementById("modalTitle");
   const modalSubtitle = document.getElementById("modalSubtitle");
   const saveBtn = document.getElementById("saveBtn");
-  const deleteBtn = document.getElementById("deleteBtn");
   const requestRescheduleBtn = document.getElementById("requestRescheduleBtn");
   const viewRescheduleRequestBtn = document.getElementById(
     "viewRescheduleRequestBtn",
@@ -1632,7 +1623,6 @@ function openViewModal(id) {
   forceTimeSelection(appt.start);
   setFormReadOnly(true);
   saveBtn.style.display = "none";
-  deleteBtn.style.display = "flex";
   const hasPatientAccount = patientHasAccount(linkedPatient);
   requestRescheduleBtn.style.display =
     hasPatientAccount &&
@@ -1681,7 +1671,6 @@ function prepareAppointmentEdit(id, mode) {
   const modalTitle = document.getElementById("modalTitle");
   const modalSubtitle = document.getElementById("modalSubtitle");
   const saveBtn = document.getElementById("saveBtn");
-  const deleteBtn = document.getElementById("deleteBtn");
   const requestRescheduleBtn = document.getElementById("requestRescheduleBtn");
   const viewNotice = document.getElementById("viewOnlyNotice");
   const pastNotice = document.getElementById("pastRecordNotice");
@@ -1701,7 +1690,6 @@ function prepareAppointmentEdit(id, mode) {
     mode === "reschedule" ? "Save Reschedule" : "Save Changes";
   saveBtn.style.display = "inline-flex";
   saveBtn.disabled = false;
-  deleteBtn.style.display = "flex";
   requestRescheduleBtn.style.display = "none";
   viewNotice.classList.remove("show");
   pastNotice.classList.remove("show");
@@ -1808,7 +1796,7 @@ function checkCurrentFormConflict() {
     }
     if (date && isToday(date) && getCurrentTimeMinutes() >= END_HOUR * 60) {
       text.textContent =
-        "Online appointment booking is closed for today because the clinic has already reached its closing time (8:00 PM).";
+        "Online appointment booking is closed for today because the clinic has already reached its closing time (5:30 PM).";
       notice.classList.add("show");
       saveBtn.disabled = true;
       return;
@@ -1834,10 +1822,10 @@ function checkCurrentFormConflict() {
   }
   if (
     startMinutes < clinicStart ||
-    appointmentEnd > clinicEnd ||
+    startMinutes > clinicEnd ||
     startMinutes % SLOT_MIN !== 0
   ) {
-    text.textContent = `The selected time must start on a ${SLOT_MIN}-minute slot and stay within clinic hours (${fmtTime("10:00")}–${fmtTime("20:00")}).`;
+    text.textContent = `The selected appointment must start between ${fmtTime("10:00")} and ${fmtTime("17:30")}.`;
     notice.classList.add("show");
     saveBtn.disabled = true;
     return;
@@ -1932,7 +1920,7 @@ function saveAppt() {
   const currentTime = getCurrentTimeMinutes();
   if (isToday(date) && currentTime >= END_HOUR * 60) {
     showToast(
-      "Appointment booking is closed for today. The clinic closes at 8:00 PM.",
+      "Appointment booking is closed for today. The clinic closes at 5:30 PM.",
     );
     return;
   }
@@ -1944,11 +1932,11 @@ function saveAppt() {
   }
   if (
     startMinutes < clinicStart ||
-    appointmentEnd > clinicEnd ||
+    startMinutes > clinicEnd ||
     startMinutes % SLOT_MIN !== 0
   ) {
     showToast(
-      `Appointment must start on a ${SLOT_MIN}-minute slot and remain within clinic hours (${fmtTime("10:00")}–${fmtTime("20:00")}).`,
+      `Appointment must start between ${fmtTime("10:00")} and ${fmtTime("17:30")}.`,
     );
     return;
   }
@@ -2397,7 +2385,6 @@ function getPendingPatientRescheduleRequestForAppointment(appointmentId) {
     ) || null
   );
 }
-
 function getApprovedRescheduleCountForAppointment(appointmentId) {
   if (!appointmentId) return 0;
   return loadRescheduleRequests().filter((request) => {
@@ -2469,36 +2456,36 @@ function renderRescheduleRequests() {
     const card = document.createElement("div");
     card.className = "reschedule-request-card";
     card.innerHTML = `
-        <div class="reschedule-request-card-header">
-          <div class="reschedule-request-avatar">${escapeHtml(getInitials(patient))}</div>
-          <div class="reschedule-request-patient">
-            <strong>${escapeHtml(patient)}</strong>
-            <span>${escapeHtml(service)}</span>
-          </div>
-          <span class="reschedule-request-status">Pending</span>
-        </div>
-        <div class="reschedule-request-schedule">
-          <div>
-            <span>Current Schedule</span>
-            <strong>${escapeHtml(formatDateLong(currentDate))} · ${escapeHtml(fmtTime(currentTime))}</strong>
-          </div>
-          <i class="fa-solid fa-arrow-right"></i>
-          <div>
-            <span>Requested Schedule</span>
-            <strong>${escapeHtml(formatDateLong(preferredDate))} · ${escapeHtml(fmtTime(preferredTime))}</strong>
-          </div>
-        </div>
-        <div class="reschedule-request-meta">
-          <span><strong>Reason:</strong> ${escapeHtml(reason)}</span>
-          <span><strong>Dentist:</strong> ${escapeHtml(dentist)}</span>
-          <span><strong>Approved Reschedules:</strong> ${currentRescheduleCount}/2</span>
-        </div>
-        ${message ? `<div class="reschedule-request-message"><span>Message from Patient</span><p>${escapeHtml(message)}</p></div>` : ""}
-        <div class="reschedule-request-actions">
-          <button type="button" class="reschedule-request-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
-          <button type="button" class="reschedule-request-approve"><i class="fa-solid fa-check"></i> Approve</button>
-        </div>
-      `;
+            <div class="reschedule-request-card-header">
+              <div class="reschedule-request-avatar">${escapeHtml(getInitials(patient))}</div>
+              <div class="reschedule-request-patient">
+                <strong>${escapeHtml(patient)}</strong>
+                <span>${escapeHtml(service)}</span>
+              </div>
+              <span class="reschedule-request-status">Pending</span>
+            </div>
+            <div class="reschedule-request-schedule">
+              <div>
+                <span>Current Schedule</span>
+                <strong>${escapeHtml(formatDateLong(currentDate))} · ${escapeHtml(fmtTime(currentTime))}</strong>
+              </div>
+              <i class="fa-solid fa-arrow-right"></i>
+              <div>
+                <span>Requested Schedule</span>
+                <strong>${escapeHtml(formatDateLong(preferredDate))} · ${escapeHtml(fmtTime(preferredTime))}</strong>
+              </div>
+            </div>
+            <div class="reschedule-request-meta">
+              <span><strong>Reason:</strong> ${escapeHtml(reason)}</span>
+              <span><strong>Dentist:</strong> ${escapeHtml(dentist)}</span>
+              <span><strong>Approved Reschedules:</strong> ${currentRescheduleCount}/2</span>
+            </div>
+            ${message ? `<div class="reschedule-request-message"><span>Message from Patient</span><p>${escapeHtml(message)}</p></div>` : ""}
+            <div class="reschedule-request-actions">
+              <button type="button" class="reschedule-request-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
+              <button type="button" class="reschedule-request-approve"><i class="fa-solid fa-check"></i> Approve</button>
+            </div>
+          `;
     const rejectButton = card.querySelector(".reschedule-request-reject");
     const approveButton = card.querySelector(".reschedule-request-approve");
     rejectButton?.addEventListener("click", (event) => {
@@ -2512,7 +2499,6 @@ function renderRescheduleRequests() {
     list.appendChild(card);
   });
 }
-
 async function approveRescheduleRequest(requestId, newDate, newTime) {
   const requests = loadRescheduleRequests();
   const requestIndex = requests.findIndex(
@@ -2619,7 +2605,6 @@ async function approveRescheduleRequest(requestId, newDate, newTime) {
   renderAll();
   showToast(`${appointment.patient}'s reschedule request was approved.`);
 }
-
 function rejectRescheduleRequest(requestId) {
   const requests = loadRescheduleRequests();
   const requestIndex = requests.findIndex(
@@ -2680,12 +2665,7 @@ function confirmDeleteAppt() {
 function checkInAppointment(id) {
   const appt = appointments.find((item) => item.id === id);
   if (!appt) return;
-  if (
-    ![APPOINTMENT_STATUS.SCHEDULED, APPOINTMENT_STATUS.NO_SHOW].includes(
-      appt.status,
-    ) ||
-    !isToday(appt.date)
-  ) {
+  if (appt.status !== APPOINTMENT_STATUS.SCHEDULED || !isToday(appt.date)) {
     showToast("Check In is available only on the appointment date.");
     return;
   }
@@ -2717,32 +2697,144 @@ function startConsultation(id) {
   renderAll();
   showToast(`${appt.patient}'s consultation has started.`);
 }
-function recordPaymentForAppointment(id) {
-  const appt = appointments.find((item) => item.id === id);
+
+async function recordPaymentForAppointment(id) {
+  let appt = appointments.find((item) => String(item.id) === String(id));
+
   if (!appt || appt.status !== APPOINTMENT_STATUS.COMPLETED) {
     return;
   }
-  const dentist = getDentistRecord(appt.dentist) || {
+
+  const getDatabaseAppointmentId = (appointment) =>
+    Number(
+      appointment?.databaseAppointmentId ??
+        appointment?.database_appointment_id ??
+        appointment?.appointment_id ??
+        0,
+    );
+
+  let databaseAppointmentId = getDatabaseAppointmentId(appt);
+
+  if (!databaseAppointmentId) {
+    try {
+      if (!window.DentaNuevaAppointmentDatabase) {
+        throw new Error("Appointment database API is unavailable.");
+      }
+
+      const latestAppointments =
+        await window.DentaNuevaAppointmentDatabase.load();
+
+      if (!Array.isArray(latestAppointments)) {
+        throw new Error("Unable to reload appointments.");
+      }
+
+      const freshAppointment = latestAppointments.find((item) => {
+        const identifiers = [
+          item.id,
+          item.appointmentId,
+          item.appointment_uid,
+          item.appointmentUid,
+          item.appointment_id,
+          item.databaseAppointmentId,
+          item.database_appointment_id,
+        ];
+
+        return identifiers.some(
+          (value) =>
+            value !== undefined &&
+            value !== null &&
+            String(value) === String(id),
+        );
+      });
+
+      if (!freshAppointment) {
+        throw new Error("Appointment record was not found.");
+      }
+
+      const normalizedAppointment = normalizeAppointment(freshAppointment);
+
+      databaseAppointmentId = getDatabaseAppointmentId(normalizedAppointment);
+
+      if (!databaseAppointmentId) {
+        throw new Error("Database appointment ID is missing.");
+      }
+
+      appt = {
+        ...normalizedAppointment,
+        status: normalizedAppointment.status,
+      };
+
+      const appointmentIndex = appointments.findIndex(
+        (item) =>
+          String(item.id) === String(id) ||
+          String(item.appointment_uid || item.appointmentUid || "") ===
+            String(id),
+      );
+
+      if (appointmentIndex !== -1) {
+        appointments[appointmentIndex] = appt;
+      }
+    } catch (error) {
+      console.error("Unable to link appointment payment:", error);
+      showToast("Unable to load the appointment record. Please try again.");
+      return;
+    }
+  }
+
+  if (appt.status !== APPOINTMENT_STATUS.COMPLETED) {
+    showToast("Only completed appointments can be paid.");
+    return;
+  }
+
+  const dentist = getDentistRecord(
+    appt.dentist || appt.dentistId || appt.dentist_id,
+  ) || {
     name: "Unassigned",
   };
+
   const pendingPayment = {
-    appointmentId: appt.id,
-    patientId: appt.patientId,
-    patientName: appt.patient,
-    dentistId: appt.dentist,
-    dentistName: dentist.name || appt.dentist,
-    service: appt.type,
-    appointmentDate: appt.date,
-    appointmentTime: appt.start,
-    duration: appt.duration,
-    amount: Number(appt.paymentAmount) || 0,
-    paymentStatus: appt.paymentStatus || "unpaid",
     source: "appointment",
-    createdAt: new Date().toISOString(),
+    appointmentId: databaseAppointmentId,
+    appointmentUid:
+      appt.appointmentUid || appt.appointment_uid || appt.id || "",
+    patientId: appt.patientId || appt.patient_id || "",
+    patientName: appt.patient || appt.patientName || "",
+    dentistId: appt.dentist || appt.dentistId || appt.dentist_id || "",
+    dentistName:
+      dentist.name || appt.dentistName || appt.dentist_name || "Unassigned",
+    service:
+      appt.type || appt.service || appt.serviceType || appt.service_type || "",
+    appointmentDate:
+      appt.date || appt.appointmentDate || appt.appointment_date || "",
+    appointmentTime:
+      appt.start ||
+      appt.time ||
+      appt.appointmentTime ||
+      appt.appointment_time ||
+      "",
+    duration: Number(appt.duration) || 0,
+    amount: Number(
+      appt.paymentAmount || appt.totalAmount || appt.total_amount || 0,
+    ),
+    paymentStatus: appt.paymentStatus || "unpaid",
   };
-  const params = new URLSearchParams(pendingPayment);
-  window.location.href = `${FINANCE_PAGE_URL}?${params.toString()}`;
+
+  if (!pendingPayment.patientId) {
+    showToast("Unable to identify the patient for this appointment.");
+    return;
+  }
+
+  const params = new URLSearchParams();
+
+  Object.entries(pendingPayment).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
+  });
+
+  window.location.href = `../finance/finance.html?${params.toString()}`;
 }
+
 function openStatusConfirmation(id, actionType) {
   const appt = appointments.find((item) => item.id === id);
   if (!appt) return;
@@ -2755,16 +2847,8 @@ function openStatusConfirmation(id, actionType) {
   const icon = document.getElementById("statusConfirmIcon");
   if (actionType === "finishConsultation") {
     title.textContent = "Finish Consultation?";
-    message.textContent = `Are you sure you want to finish ${appt.patient}'s consultation? The appointment will move to Ready to Complete.`;
+    message.textContent = `Are you sure you want to finish ${appt.patient}'s consultation? The appointment will be marked as Completed.`;
     button.textContent = "Yes, Finish";
-    if (icon) {
-      icon.innerHTML = "";
-    }
-  }
-  if (actionType === "completeAppointment") {
-    title.textContent = "Complete Appointment?";
-    message.textContent = `Are you sure you want to mark ${appt.patient}'s appointment as completed?`;
-    button.textContent = "Yes, Complete";
     if (icon) {
       icon.innerHTML = "";
     }
@@ -2850,23 +2934,7 @@ function confirmStatusAction() {
       closeStatusConfirmation();
       return;
     }
-    appt.status = APPOINTMENT_STATUS.READY_COMPLETE;
-    appt.consultationStarted = false;
-    appt.manualReadyComplete = true;
-    saveAppointmentsToDatabase();
-    syncAppointmentToPatient(appt);
-    closeStatusConfirmation();
-    renderAll();
-    showToast(
-      `${appt.patient}'s consultation is finished. Please confirm Complete.`,
-    );
-    return;
-  }
-  if (statusActionType === "completeAppointment") {
-    if (appt.status !== APPOINTMENT_STATUS.READY_COMPLETE) {
-      closeStatusConfirmation();
-      return;
-    }
+
     appt.status = APPOINTMENT_STATUS.COMPLETED;
     appt.checkedIn = true;
     appt.consultationStarted = false;
@@ -2875,9 +2943,7 @@ function confirmStatusAction() {
     syncAppointmentToPatient(appt);
     closeStatusConfirmation();
     renderAll();
-    showToast(
-      `${appt.patient}'s appointment is now Completed. You can record the payment in Finance.`,
-    );
+    showToast(`${appt.patient}'s consultation is now Completed.`);
     return;
   }
   if (statusActionType === "markNoShow") {
@@ -2901,6 +2967,7 @@ function confirmStatusAction() {
 function createAppointmentStatusButton(appt) {
   const wrapper = document.createElement("div");
   wrapper.className = "appt-status-area";
+
   if (appt.status === APPOINTMENT_STATUS.SCHEDULED) {
     if (!isToday(appt.date)) {
       const badge = document.createElement("span");
@@ -2909,90 +2976,78 @@ function createAppointmentStatusButton(appt) {
       wrapper.appendChild(badge);
       return wrapper;
     }
+
     const checkInBtn = document.createElement("button");
     checkInBtn.type = "button";
     checkInBtn.className = "appt-status-btn status-checkin";
     checkInBtn.textContent = "Check In";
+
     checkInBtn.addEventListener("click", (event) => {
       event.stopPropagation();
       checkInAppointment(appt.id);
     });
+
     wrapper.appendChild(checkInBtn);
+
     if (isNoShowEligible(appt)) {
       const noShowBtn = document.createElement("button");
       noShowBtn.type = "button";
       noShowBtn.className = "appt-status-btn status-noshow";
       noShowBtn.textContent = "Mark No Show";
+
       noShowBtn.addEventListener("click", (event) => {
         event.stopPropagation();
         openStatusConfirmation(appt.id, "markNoShow");
       });
+
       wrapper.appendChild(noShowBtn);
     }
+
     return wrapper;
   }
+
   if (appt.status === APPOINTMENT_STATUS.IN_CONSULTATION) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "appt-status-btn status-consultation";
     button.textContent = "In Consultation";
+
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       openStatusConfirmation(appt.id, "finishConsultation");
     });
+
     wrapper.appendChild(button);
     return wrapper;
   }
-  if (appt.status === APPOINTMENT_STATUS.READY_COMPLETE) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "appt-status-btn status-complete";
-    button.textContent = "Complete";
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      openStatusConfirmation(appt.id, "completeAppointment");
-    });
-    wrapper.appendChild(button);
-    return wrapper;
-  }
+
   if (appt.status === APPOINTMENT_STATUS.COMPLETED) {
     const badge = document.createElement("span");
     badge.className = "appt-status-badge completed";
     badge.textContent = "Completed";
     wrapper.appendChild(badge);
+
     const paymentBtn = document.createElement("button");
     paymentBtn.type = "button";
     paymentBtn.className = "appt-status-btn status-payment";
-    if (appt.paymentStatus === "paid") {
+
+    if (String(appt.paymentStatus || "").toLowerCase() === "paid") {
       paymentBtn.textContent = "Paid";
       paymentBtn.classList.add("payment-paid");
       paymentBtn.disabled = true;
     } else {
       paymentBtn.textContent = "Record Payment";
+
       paymentBtn.addEventListener("click", (event) => {
         event.stopPropagation();
         recordPaymentForAppointment(appt.id);
       });
     }
+
     wrapper.appendChild(paymentBtn);
     return wrapper;
   }
-  if (
-    appt.status === APPOINTMENT_STATUS.NO_SHOW &&
-    isToday(appt.date) &&
-    getCurrentTimeMinutes() < getAppointmentEnd(appt)
-  ) {
-    const checkInBtn = document.createElement("button");
-    checkInBtn.type = "button";
-    checkInBtn.className = "appt-status-btn status-checkin";
-    checkInBtn.textContent = "Late Check In";
-    checkInBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      checkInAppointment(appt.id);
-    });
-    wrapper.appendChild(checkInBtn);
-    return wrapper;
-  }
+
   if (appt.status === APPOINTMENT_STATUS.NO_SHOW) {
     const badge = document.createElement("span");
     badge.className = "appt-status-badge no-show";
@@ -3000,24 +3055,30 @@ function createAppointmentStatusButton(appt) {
     wrapper.appendChild(badge);
     return wrapper;
   }
+
   if (appt.status === APPOINTMENT_STATUS.CANCELLED) {
     const badge = document.createElement("span");
     badge.className = "appt-status-badge cancelled";
     badge.textContent = "Cancelled";
     wrapper.appendChild(badge);
+
     if (!isPastDate(appt.date)) {
       const openButton = document.createElement("button");
       openButton.type = "button";
       openButton.className = "appt-status-btn status-payment";
       openButton.textContent = "Open Slot";
+
       openButton.addEventListener("click", (event) => {
         event.stopPropagation();
         openNewModal(appt.date, appt.start);
       });
+
       wrapper.appendChild(openButton);
     }
+
     return wrapper;
   }
+
   return wrapper;
 }
 function updateAppointmentSideTitle() {
@@ -3025,7 +3086,6 @@ function updateAppointmentSideTitle() {
   if (!header) return;
   const title = header.querySelector("h3");
   const description = header.querySelector(".side-section-description");
-  const switchButton = document.getElementById("showWaitingBtn");
   const selectedKey = dateToKey(selectedDate);
   const selected = keyToDate(selectedKey);
   const dateLabel = selected.toLocaleDateString("en-US", {
@@ -3039,18 +3099,10 @@ function updateAppointmentSideTitle() {
   }
   if (description) {
     description.textContent = isToday(selectedKey)
-      ? "Appointments scheduled for today and current status"
+      ? "Today's appointments and current status"
       : isPastDate(selectedKey)
         ? "Appointment history for this date"
         : "Upcoming appointments scheduled for this date";
-  }
-  if (switchButton) {
-    const label = switchButton.querySelector("span");
-    if (label) {
-      label.textContent = isToday(selectedKey)
-        ? "Today's Appointments"
-        : "Appointment";
-    }
   }
 }
 function renderAll() {
@@ -3059,7 +3111,6 @@ function renderAll() {
   renderScheduleOverview();
   renderTimeline();
   renderWaitingQueue();
-  renderRealtimeDentistsDuty();
   renderRescheduleRequests();
   updateAppointmentSideTitle();
 }
@@ -3266,23 +3317,28 @@ function renderTimeline() {
     dateLabel.textContent = formatDateLong(selectedKey);
   }
   const dayAppointments = filteredAppts();
-  const schedulePanel = timeline.closest(".schedule-panel");
-  schedulePanel?.classList.toggle(
-    "schedule-panel--expanded",
-    dayAppointments.length > 10,
-  );
+  function adjustSchedulePanelHeight() {
+    const schedulePanel = document.querySelector(".schedule-panel");
+    const timeline = document.getElementById("timeline");
+    if (!schedulePanel || !timeline) return;
+    const availableHeight = 560;
+    const requiredHeight = timeline.scrollHeight;
+    schedulePanel.classList.toggle(
+      "schedule-panel--expanded",
+      requiredHeight > availableHeight,
+    );
+  }
   if (!dayAppointments.length) {
     const emptyState = document.createElement("div");
     emptyState.className = "schedule-empty-state";
     emptyState.innerHTML = `
-        <i class="fa-regular fa-calendar"></i>
-        <strong>${selectedIsPast ? "No appointment records" : "No patient appointments"}</strong>
-        <span>${selectedIsPast ? "There are no appointment records for this date." : "No appointments scheduled for this date."}</span>
-      `;
+            <i class="fa-regular fa-calendar"></i>
+            <strong>${selectedIsPast ? "No appointment records" : "No patient appointments"}</strong>
+            <span>${selectedIsPast ? "There are no appointment records for this date." : "No appointments scheduled for this date."}</span>
+          `;
     timeline.appendChild(emptyState);
     return;
   }
-
   dayAppointments.forEach((appt) => {
     const row = document.createElement("div");
     row.className = "tl-row";
@@ -3296,6 +3352,7 @@ function renderTimeline() {
     row.appendChild(slot);
     timeline.appendChild(row);
   });
+  adjustSchedulePanelHeight();
 }
 function getPendingRescheduleRequestForAppointment(appointmentId) {
   return (
@@ -3323,8 +3380,6 @@ function createAppointmentCard(appt) {
   let workflowText = "";
   if (appt.status === APPOINTMENT_STATUS.IN_CONSULTATION) {
     workflowText = " · In Consultation";
-  } else if (appt.status === APPOINTMENT_STATUS.READY_COMPLETE) {
-    workflowText = " · Complete";
   }
   const pendingRescheduleRequest = getPendingRescheduleRequestForAppointment(
     appt.id,
@@ -3365,10 +3420,7 @@ function renderWaitingQueue() {
     .filter((appt) => {
       if (selectedIsPast) return true;
       if (selectedIsToday) {
-        return (
-          appt.status !== APPOINTMENT_STATUS.COMPLETED &&
-          appt.status !== APPOINTMENT_STATUS.NO_SHOW
-        );
+        return appt.status !== APPOINTMENT_STATUS.COMPLETED;
       }
       return appt.status === APPOINTMENT_STATUS.SCHEDULED;
     })
@@ -3419,7 +3471,7 @@ function renderWaitingQueue() {
       pendingRescheduleRequest?.preferred_time ||
       pendingRescheduleRequest?.preferredTime ||
       "";
-    item.innerHTML = `<div class="queue-main"><div class="queue-avatar" style="background:${hexToRgba(dentist.color, 0.12)};color:${dentist.color};">${initials}</div><div class="queue-text"><span class="queue-name">${escapeHtml(appt.patient)}</span><span class="queue-time">Time ${escapeHtml(fmtTime(appt.start))}</span><span class="queue-dentist">${escapeHtml(dentist.name)}</span>${pendingRescheduleRequest ? `<div class="queue-reschedule-request"><span><i class="fa-solid fa-calendar-days"></i> Reschedule Requested</span><strong>${escapeHtml(formatDateLong(preferredDate))} · ${escapeHtml(fmtTime(preferredTime))}</strong></div>` : ""}</div></div><div class="queue-type">${escapeHtml(statusText)}</div>`;
+    item.innerHTML = `<div class="queue-main"><div class="queue-avatar" style="background:${hexToRgba(dentist.color, 0.12)};color:${dentist.color};">${initials}</div><div class="queue-text"><span class="queue-name">${escapeHtml(appt.patient)}</span><span class="queue-dentist">${escapeHtml(dentist.name)}</span>${pendingRescheduleRequest ? `<div class="queue-reschedule-request"><span><i class="fa-solid fa-calendar-days"></i> Reschedule Requested</span><strong>${escapeHtml(formatDateLong(preferredDate))} · ${escapeHtml(fmtTime(preferredTime))}</strong></div>` : ""}</div></div><div class="queue-type">${escapeHtml(statusText)}</div>`;
     item.addEventListener("click", () => openViewModal(appt.id));
     list.appendChild(item);
   });

@@ -12,8 +12,13 @@
   --page-bg: #f4f7f5;
   --amber: #bd7415;
   --amber-soft: #fff7e9;
-  --shadow: 0 3px 14px rgba(20, 57, 36, 0.045);
-  --shadow-hover: 0 7px 22px rgba(20, 57, 36, 0.075);
+  --shadow: 0 4px 18px rgba(20, 57, 36, 0.05);
+  --shadow-hover: 0 8px 24px rgba(20, 57, 36, 0.08);
+  --shadow-pop:
+    0 24px 60px rgba(15, 34, 23, 0.16), 0 6px 18px rgba(15, 34, 23, 0.06);
+  --radius-lg: 20px;
+  --radius-md: 13px;
+  --radius-sm: 9px;
   --font-body: "Inter", sans-serif;
   --font-heading: "Poppins", sans-serif;
 }
@@ -52,23 +57,41 @@ button {
 .payments-main {
   flex: 1;
   min-width: 0;
-  padding: 24px 30px 34px;
+  padding: 28px 34px 38px;
 }
 .payments-content {
   width: 100%;
-  max-width: 1320px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 .payments-page-header {
-  min-height: 78px;
-  margin-bottom: 16px;
-  padding: 17px 21px;
+  min-height: 80px;
+  margin-bottom: 18px;
+  padding: 18px 24px;
   display: flex;
   align-items: center;
   border: 1px solid var(--border);
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   background: var(--white);
   box-shadow: var(--shadow);
+}
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.page-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--green-soft);
+  border: 1px solid #d5eadc;
+  color: var(--green);
+  font-size: 1rem;
 }
 .payments-heading {
   min-width: 0;
@@ -77,7 +100,7 @@ button {
   margin: 0 0 4px;
   color: #14231a;
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.025em;
@@ -85,24 +108,27 @@ button {
 .payments-heading p {
   margin: 0;
   color: var(--text-soft);
-  font-size: 9.5px;
+  font-size: 10.5px;
   line-height: 1.5;
 }
 .payment-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 .payment-summary-card {
   min-width: 0;
-  min-height: 112px;
-  padding: 14px 18px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  min-height: 114px;
+  padding: 16px 19px;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  column-gap: 12px;
+  row-gap: 2px;
   border: 1px solid var(--border);
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   background: var(--white);
   box-shadow: var(--shadow);
   transition:
@@ -111,56 +137,87 @@ button {
     border-color 0.18s ease;
 }
 .payment-summary-card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   border-color: #d7e4dc;
   box-shadow: var(--shadow-hover);
 }
 .summary-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  display: contents;
   color: #65736b;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1.3;
 }
+.summary-card-top > span {
+  grid-column: 2;
+  grid-row: 1;
+}
 .summary-icon {
-  width: 34px;
-  height: 34px;
+  position: relative;
+  overflow: hidden;
+  width: 36px;
+  height: 36px;
+  grid-column: 1;
+  grid-row: 1 / span 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 34px;
-  border-radius: 9px;
-  font-size: 11px;
+  align-self: center;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font-size: 13px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 2px 6px rgba(28, 52, 38, 0.08);
+}
+.summary-icon i {
+  position: relative;
+  z-index: 1;
+}
+.summary-icon::after {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  content: "";
+  opacity: 0.14;
 }
 .summary-icon.treatment {
-  background: #f2f7f4;
-  color: #60766a;
+  border-color: #cfe5f3;
+  background: linear-gradient(145deg, #eaf6fd, #d8edfa);
+  color: #287aa5;
 }
 .summary-icon.paid {
-  background: var(--green-soft);
-  color: var(--green);
+  border-color: #cce8d5;
+  background: linear-gradient(145deg, #e9f8ee, #d4f0de);
+  color: #168044;
 }
 .summary-icon.balance {
-  background: var(--amber-soft);
-  color: #c47a16;
+  border-color: #f2dfbd;
+  background: linear-gradient(145deg, #fff8e9, #ffedc9);
+  color: #b97113;
 }
 .payment-summary-card strong {
+  grid-column: 2;
+  grid-row: 2;
   display: block;
-  margin-top: 11px;
+  margin-top: 0;
   color: #17241c;
   font-family: var(--font-heading);
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 .payment-summary-card p {
-  margin: 4px 0 0;
+  grid-column: 2;
+  grid-row: 3;
+  margin: 3px 0 0;
   color: var(--text-muted);
-  font-size: 8px;
+  font-size: 8.5px;
   line-height: 1.4;
 }
 .balance-card strong {
@@ -170,13 +227,13 @@ button {
   overflow: hidden;
   margin-bottom: 18px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: var(--white);
   box-shadow: var(--shadow);
 }
 .payment-history-header {
-  min-height: 76px;
-  padding: 16px 20px;
+  min-height: 78px;
+  padding: 18px 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -194,37 +251,37 @@ button {
 .payment-history-header p {
   margin: 0;
   color: #7b8780;
-  font-size: 8.5px;
+  font-size: 9px;
   line-height: 1.45;
 }
 .transaction-count {
-  min-height: 27px;
-  padding: 0 10px;
+  min-height: 28px;
+  padding: 0 11px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid #dce9e1;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: #f4faf6;
-  color: #607568;
+  color: #3c7d55;
   font-size: 7.5px;
   font-weight: 700;
   white-space: nowrap;
 }
 .payment-filters {
-  min-height: 53px;
-  padding: 9px 20px;
+  min-height: 54px;
+  padding: 10px 22px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   border-bottom: 1px solid var(--border-soft);
   background: #fbfcfb;
 }
 .payment-filter {
-  min-height: 30px;
-  padding: 0 13px;
+  min-height: 31px;
+  padding: 0 14px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: #78847d;
   font-size: 8px;
@@ -249,17 +306,17 @@ button {
 }
 .payment-table {
   width: 100%;
-  min-width: 1120px;
+  min-width: 1180px;
   border-collapse: collapse;
   table-layout: auto;
 }
 .payment-table th {
-  height: 42px;
-  padding: 0 13px;
+  height: 48px;
+  padding: 0 16px;
   border-bottom: 1px solid #e9eeeb;
   background: #fcfdfc;
   color: #87928b;
-  font-size: 7px;
+  font-size: 8.5px;
   font-weight: 700;
   text-align: left;
   text-transform: uppercase;
@@ -268,18 +325,22 @@ button {
 }
 .payment-table th:first-child,
 .payment-table td:first-child {
-  padding-left: 20px;
+  width: 250px;
+  padding-left: 22px;
 }
 .payment-table th:last-child,
 .payment-table td:last-child {
-  padding-right: 20px;
+  padding-right: 22px;
 }
 .payment-table td {
-  height: 70px;
-  padding: 10px 13px;
+  height: 78px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border-soft);
   color: #536158;
-  font-size: 8.5px;
+  font-size: 10px;
+  vertical-align: middle;
+}
+.payment-table td:nth-last-child(2) {
   vertical-align: middle;
 }
 .payment-table tbody tr:last-child td {
@@ -288,19 +349,56 @@ button {
 .payment-table tbody tr:hover {
   background: #fbfdfc;
 }
-.transaction-id {
+.transaction-patient {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.transaction-avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #eaf7ef, #dcf0e4);
+  border: 1px solid #d5eadc;
+  color: var(--green);
+  font-family: var(--font-heading);
+  font-size: 9px;
+  font-weight: 700;
+}
+.transaction-patient-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.transaction-patient-name {
   display: block;
-  margin-bottom: 3px;
+  margin: 0;
   color: #24332a;
   font-family: var(--font-heading);
-  font-size: 8.5px;
+  font-size: 11px;
   font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.transaction-id {
+  display: block;
+  color: #89958e;
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.3;
   white-space: nowrap;
 }
 .transaction-reference {
   display: block;
   color: #99a29c;
-  font-size: 6.8px;
+  font-size: 8px;
   white-space: nowrap;
 }
 .service-name {
@@ -312,7 +410,7 @@ button {
 .payment-discount,
 .payment-balance {
   font-family: var(--font-heading);
-  font-size: 8.5px;
+  font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -331,53 +429,62 @@ button {
   white-space: nowrap;
 }
 .payment-method i {
-  font-size: 8px;
+  font-size: 9px;
 }
 .payment-status-badge {
-  min-height: 22px;
-  padding: 0 8px;
+  width: 68px;
+  min-width: 68px;
+  height: 32px;
+  padding: 0 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  font-size: 7px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 8px;
   font-weight: 700;
+  line-height: 1;
+  text-align: center;
   white-space: nowrap;
+  vertical-align: middle;
+  margin: 0;
+  box-sizing: border-box;
 }
 .payment-status-badge.paid {
-  border: 1px solid #cce5d4;
-  background: #edf9f1;
-  color: #24713d;
+  background: #eaf8ef;
+  color: #267b47;
 }
 .payment-status-badge.partial {
-  border: 1px solid #f0dfbd;
-  background: #fff7e9;
-  color: #ae7018;
+  background: #fff5dc;
+  color: #b67a08;
 }
 .payment-status-badge.pending {
-  border: 1px solid #d7e3eb;
   background: #f1f6f9;
   color: #5f7480;
+}
+.modal-payment-id .payment-status-badge {
+  padding: 10px 5px;
+  font-size: 8px;
 }
 .payment-action-group {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 5px;
+  gap: 7px;
 }
 .view-payment-btn,
 .pay-payment-btn {
-  width: 29px;
-  height: 29px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 29px;
+  flex: 0 0 32px;
   border: 1px solid #dfe7e2;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: #fff;
   color: #708078;
-  font-size: 9px;
+  font-size: 10px;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -416,13 +523,13 @@ button {
   display: none;
 }
 .payment-empty-icon {
-  width: 52px;
-  height: 52px;
-  margin-bottom: 12px;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--radius-md);
   background: #f1f8f4;
   color: var(--green);
   font-size: 16px;
@@ -454,8 +561,7 @@ button {
 }
 .payment-modal[hidden],
 .receipt-modal[hidden],
-.patient-pay-modal[hidden],
-.patient-payment-verification-modal[hidden] {
+.patient-pay-modal[hidden] {
   display: none;
 }
 .payment-modal-overlay,
@@ -463,7 +569,9 @@ button {
 .patient-pay-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(14, 28, 20, 0.42);
+  background: rgba(14, 28, 20, 0.45);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 .payment-modal-dialog,
 .receipt-modal-dialog,
@@ -474,21 +582,31 @@ button {
   max-height: calc(100vh - 40px);
   overflow: auto;
   border: 1px solid #dfe7e2;
-  border-radius: 15px;
+  border-radius: var(--radius-lg);
   background: #fff;
-  box-shadow: 0 18px 55px rgba(20, 40, 28, 0.18);
+  box-shadow: var(--shadow-pop);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.payment-modal-dialog::-webkit-scrollbar,
+.receipt-modal-dialog::-webkit-scrollbar,
+.patient-pay-dialog::-webkit-scrollbar {
+  display: none;
+  width: 0;
 }
 .patient-pay-dialog {
   width: min(620px, 100%);
+  border-radius: 22px;
 }
 .receipt-modal-dialog {
-  width: min(560px, 100%);
+  width: min(660px, 100%);
+  max-height: calc(100vh - 24px);
 }
 .payment-modal-header,
 .receipt-modal-header,
 .patient-pay-header {
-  min-height: 72px;
-  padding: 17px 19px;
+  min-height: 74px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -514,17 +632,21 @@ button {
 .patient-pay-header > div > span {
   color: var(--green);
 }
+.patient-pay-header h2 {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
 .payment-modal-close,
 .receipt-modal-close,
 .patient-pay-close {
-  width: 31px;
-  height: 31px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 31px;
+  flex: 0 0 32px;
   border: 1px solid #e0e7e2;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: #fff;
   color: #78847d;
   transition:
@@ -539,14 +661,24 @@ button {
   background: #f1f8f4;
   color: var(--green);
 }
-.payment-modal-body {
-  padding: 19px;
+.payment-modal-body,
+.receipt-modal-body,
+.patient-pay-body {
+  padding: 20px;
+}
+.patient-pay-body {
+  padding: 22px;
+  background: #fcfdfc;
 }
 .modal-payment-id {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   padding: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border: 1px solid #dbe8e0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: #f5faf7;
 }
 .modal-payment-id span {
@@ -561,11 +693,20 @@ button {
   font-family: var(--font-heading);
   font-size: 12px;
 }
+.modal-section-label {
+  margin: 2px 0 8px;
+  color: #87938c;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
 .modal-detail-grid {
+  margin-bottom: 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   border: 1px solid #e4ebe6;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .modal-detail-item {
@@ -589,31 +730,171 @@ button {
   font-size: 9px;
   font-weight: 700;
 }
-.modal-total {
+.modal-amount-row {
   margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.modal-amount-box {
   padding: 13px;
+  border-radius: var(--radius-md);
+}
+.modal-amount-box span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.modal-amount-box strong {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+}
+.modal-amount-box.paid {
+  background: #eaf7ef;
+}
+.modal-amount-box.paid span {
+  color: #60766a;
+}
+.modal-amount-box.paid strong {
+  color: var(--green);
+}
+.modal-amount-box.balance {
+  border: 1px solid #f0dfbd;
+  background: #fff7e9;
+}
+.modal-amount-box.balance span {
+  color: #8b6c3d;
+}
+.modal-amount-box.balance strong {
+  color: #bd7415;
+}
+.payment-history-section {
+  margin-top: 18px;
+  padding-top: 17px;
+  border-top: 1px solid var(--border);
+}
+.payment-modal-body .payment-history-header {
+  min-height: 0;
+  margin-bottom: 9px;
+  padding: 0;
+  border: 0;
+}
+.payment-history-header > div:first-child {
+  min-width: 0;
+}
+.payment-history-header > div:first-child > span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--green);
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+}
+.payment-history-header h3 {
+  margin: 0;
+  color: #303b34;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 800;
+}
+.payment-modal-body .payment-history-header p {
+  margin: 3px 0 0;
+  color: #9aa39e;
+  font-size: 8px;
+}
+.payment-history-count {
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0 9px;
+  border: 1px solid #dcebe2;
+  border-radius: 13px;
+  background: #f5faf7;
+  color: var(--green);
+  font-size: 7.8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.payment-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.payment-history-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  padding: 10px 11px;
+  border: 1px solid #e4ebe7;
   border-radius: 10px;
-  background: #f1f8f4;
+  background: #fff;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
-.modal-total span {
-  color: #65766c;
-  font-size: 8px;
-  font-weight: 600;
+.payment-history-item:hover {
+  border-color: #d4e3da;
+  background: #fbfdfc;
 }
-.modal-total strong {
-  color: var(--green);
-  font-family: var(--font-heading);
-  font-size: 14px;
-}
-.modal-receipt-action {
-  margin-top: 10px;
+.payment-history-item-left {
+  min-width: 0;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 9px;
 }
+.payment-history-method-icon {
+  width: 31px;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--green-light);
+  color: var(--green);
+}
+.payment-history-method-icon i {
+  font-size: 13px;
+}
+.payment-history-item-info {
+  min-width: 0;
+}
+.payment-history-item-info strong {
+  display: block;
+  color: #343e38;
+  font-size: 9px;
+  font-weight: 700;
+}
+.payment-history-item-info span {
+  display: block;
+  margin-top: 2px;
+  color: #9aa39e;
+  font-size: 7.8px;
+}
+.payment-history-item-right {
+  flex-shrink: 0;
+  text-align: right;
+}
+.payment-history-item-right strong {
+  display: block;
+  color: #253129;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+.payment-history-item-right span {
+  display: block;
+  margin-top: 2px;
+  color: #8d9791;
+  font-size: 7.5px;
+}
+.modal-receipt-action,
 .modal-receipt-button {
   width: 100%;
   min-height: 39px;
@@ -621,8 +902,9 @@ button {
   align-items: center;
   justify-content: center;
   gap: 7px;
+  margin-top: 14px;
   border: 1px solid #cce3d4;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: #eaf7ef;
   color: var(--green);
   font-size: 9px;
@@ -632,534 +914,513 @@ button {
   border-color: #a9d1b8;
   background: #dcf2e5;
 }
-.receipt-modal-body {
-  padding: 19px;
-}
 .receipt-paper {
   width: 100%;
-  padding: 22px;
+  padding: 18px 20px;
   border: 1px solid #e2e9e4;
-  border-radius: 11px;
+  border-radius: var(--radius-md);
   background: #fff;
 }
 .receipt-clinic {
-  padding-bottom: 15px;
   text-align: center;
-  border-bottom: 1px dashed #dce4df;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #cfd8d2;
 }
 .receipt-clinic-icon {
-  width: 39px;
-  height: 39px;
-  margin: 0 auto 8px;
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 50%;
   background: #eaf7ef;
   color: var(--green);
-  font-size: 15px;
 }
 .receipt-clinic h3 {
   margin: 0;
-  color: #1c2c22;
+  color: #24332a;
   font-family: var(--font-heading);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 13px;
 }
 .receipt-clinic p {
   margin: 3px 0 0;
-  color: #89948e;
+  color: #7c8981;
   font-size: 8px;
 }
 .receipt-title {
-  margin: 15px 0;
+  margin: 12px 0;
   text-align: center;
-  color: #34443b;
-  font-size: 9px;
+  color: #25362c;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 .receipt-info {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #e4ebe6;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 .receipt-info-item {
-  padding: 10px;
-  border: 1px solid #e6ece8;
-  border-radius: 8px;
-  background: #fbfcfb;
+  min-height: 50px;
+  padding: 8px 10px;
+  border-right: 1px solid #e4ebe6;
+  border-bottom: 1px solid #e4ebe6;
+}
+.receipt-info-item:nth-child(3n) {
+  border-right: 0;
 }
 .receipt-info-item span {
   display: block;
-  margin-bottom: 4px;
-  color: #8a958f;
-  font-size: 6.8px;
-  font-weight: 600;
+  margin-bottom: 3px;
+  color: #89948e;
+  font-size: 6.5px;
   text-transform: uppercase;
 }
 .receipt-info-item strong {
   display: block;
-  color: #304037;
-  font-size: 8.5px;
-  font-weight: 700;
+  color: #33433a;
+  font-size: 8px;
   word-break: break-word;
 }
 .receipt-payment-total {
-  margin-top: 13px;
-  padding: 13px;
+  margin-top: 10px;
+  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: #eaf7ef;
 }
 .receipt-payment-total span {
-  color: #607568;
-  font-size: 8px;
+  color: #60766a;
+  font-size: 7.5px;
   font-weight: 700;
 }
 .receipt-payment-total strong {
   color: var(--green);
   font-family: var(--font-heading);
-  font-size: 15px;
+  font-size: 14px;
 }
 .receipt-balance {
-  margin-top: 8px;
-  padding: 10px 13px;
+  margin-top: 7px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
   border: 1px solid #f0dfbd;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: #fff7e9;
 }
 .receipt-balance span {
-  color: #8c714a;
-  font-size: 8px;
+  color: #8b6c3d;
+  font-size: 7.5px;
   font-weight: 600;
 }
 .receipt-balance strong {
-  color: #ae7018;
-  font-size: 9px;
-  font-weight: 700;
+  color: #bd7415;
+  font-family: var(--font-heading);
+  font-size: 11px;
 }
 .receipt-footer {
-  margin-top: 15px;
-  padding-top: 13px;
-  border-top: 1px dashed #dce4df;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed #cfd8d2;
   text-align: center;
-}
-.receipt-footer p {
-  margin: 0;
-  color: #8b958f;
-  font-size: 7.5px;
+  color: #7c8981;
+  font-size: 7px;
   line-height: 1.5;
 }
+.receipt-footer p {
+  margin: 2px 0;
+}
 .receipt-modal-actions {
-  padding: 13px 19px 19px;
+  padding: 0 20px 20px;
   display: flex;
-  justify-content: flex-end;
   gap: 8px;
 }
 .receipt-secondary-button,
 .receipt-primary-button {
+  flex: 1;
   min-height: 38px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 8px;
-  font-size: 8.5px;
+  border-radius: var(--radius-sm);
+  font-size: 8px;
   font-weight: 700;
 }
 .receipt-secondary-button {
-  border: 1px solid #dce4df;
+  border: 1px solid #dfe7e2;
   background: #fff;
-  color: #536159;
+  color: #68766d;
 }
 .receipt-primary-button {
-  border: 0;
-  background: var(--green);
-  color: #fff;
-}
-.receipt-primary-button:hover {
-  background: var(--green-dark);
-}
-.modal-pay-action {
-  margin-top: 10px;
-}
-.modal-pay-action button {
-  width: 100%;
-  min-height: 39px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--green);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-}
-.modal-pay-action button:hover {
-  background: var(--green-dark);
-}
-.payment-process-box {
-  width: 100%;
-  margin-top: 12px;
-  padding: 13px;
-  border: 1px solid #e0e6e2;
-  border-radius: 12px;
-  background: #fafcfb;
-}
-.payment-process-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e6ece8;
-  color: #1e2922;
-  font-size: 10px;
-  font-weight: 700;
-}
-.payment-process-header i {
-  color: var(--green);
-  font-size: 11px;
-}
-.process-row {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.process-field {
-  min-width: 0;
-  width: 100%;
-}
-.process-field label {
-  display: block;
-  margin-bottom: 5px;
-  color: #5a655f;
-  font-size: 8.5px;
-  font-weight: 600;
-}
-.process-static-amount,
-.process-info-value {
-  width: 100%;
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  padding: 0 11px;
-  border: 1px solid #e0e5e2;
-  border-radius: 8px;
-  background: #fff;
-  color: #253129;
-  font-size: 9.5px;
-  font-weight: 700;
-  overflow: hidden;
-}
-.process-info-value {
-  position: relative;
-  padding: 0;
-  color: #333c36;
-  font-size: 9px;
-  font-weight: 600;
-}
-.process-info-value input {
-  width: 100%;
-  min-width: 0;
-  height: 36px;
-  margin: 0;
-  padding: 0 11px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #334239;
-  font-family: var(--font-body);
-  font-size: 9px;
-  font-weight: 500;
-  box-shadow: none;
-}
-.process-info-value input::placeholder {
-  color: #909a94;
-  opacity: 1;
-}
-.process-info-value input:focus {
-  outline: 0;
-  border: 0;
-  box-shadow: none;
-}
-.process-info-value:focus-within {
-  border-color: #69b18a;
-  box-shadow: 0 0 0 2px rgba(22, 128, 61, 0.08);
-}
-.process-field:has(#patientCashReceived) .process-info-value {
-  padding-left: 31px;
-}
-.process-field:has(#patientCashReceived) .process-info-value::before {
-  content: "₱";
-  position: absolute;
-  left: 11px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 1;
-  color: #66736b;
-  font-size: 9px;
-  font-weight: 500;
-  pointer-events: none;
-}
-.process-field:has(#patientCashReceived) .process-info-value input {
-  padding-left: 0;
-  padding-right: 11px;
-}
-.process-field:has(#patientCashReceived)
-  .process-info-value
-  input[type="number"]::-webkit-inner-spin-button,
-.process-field:has(#patientCashReceived)
-  .process-info-value
-  input[type="number"]::-webkit-outer-spin-button {
-  margin: 0;
-}
-.process-field:has(#patientCashReceived)
-  .process-info-value
-  input[type="number"] {
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-.process-field:has(#patientGcashReference) .process-info-value,
-.process-field:has(#patientBankReference) .process-info-value,
-.process-field:has(#patientCardReference) .process-info-value {
-  min-height: 36px;
-}
-.process-field:has(#patientGcashReference) .process-info-value input,
-.process-field:has(#patientBankReference) .process-info-value input,
-.process-field:has(#patientCardReference) .process-info-value input {
-  padding-left: 11px;
-}
-.process-confirm-button {
-  min-height: 39px;
-  margin-top: 11px;
-  padding: 0 17px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--green);
-  color: #fff;
-  font-size: 8.5px;
-  font-weight: 700;
-}
-.process-confirm-button:hover:not(:disabled) {
-  background: var(--green-dark);
-}
-.process-confirm-button:disabled {
-  cursor: not-allowed;
-}
-.qr-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 13px;
-  margin-bottom: 10px;
-  border: 1px dashed #d3e0d9;
-  border-radius: 10px;
-  background: #fff;
-}
-.qr-box {
-  width: 68px;
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcebe2;
-  border-radius: 8px;
-  background: #eef8f2;
-  color: var(--green);
-}
-.qr-box i {
-  font-size: 27px;
-}
-.qr-placeholder span {
-  color: #66716b;
-  font-size: 8px;
-  font-weight: 600;
-}
-.bank-info-box {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.bank-info-box div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-height: 36px;
-  padding: 8px 10px;
-  border: 1px solid #e6ece8;
-  border-radius: 8px;
-  background: #fff;
-}
-.bank-info-box span {
-  color: #8d9791;
-  font-size: 7.5px;
-}
-.bank-info-box strong {
-  color: #28332c;
-  font-size: 8.5px;
-  text-align: right;
-}
-.process-status-banner {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 10px;
-  padding: 9px 10px;
-  border: 1px solid #cdeedb;
-  border-radius: 8px;
+  border: 1px solid #cce3d4;
   background: #eaf7ef;
-  color: #16814b;
-  font-size: 8.5px;
-  font-weight: 700;
-}
-.process-status-banner i {
-  font-size: 11px;
-}
-.patient-pay-body {
-  padding: 19px;
+  color: var(--green);
 }
 .patient-pay-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
-  margin-bottom: 15px;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 22px;
+  overflow: hidden;
+  border: 1px solid #dfe8e2;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(20, 57, 36, 0.025);
 }
 .patient-pay-summary > div {
-  padding: 11px 12px;
-  border: 1px solid #e0e8e3;
-  border-radius: 9px;
-  background: #f8fbf9;
+  min-height: 78px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid #e4ebe6;
+  border-bottom: 1px solid #e4ebe6;
+  background: #fff;
+}
+.patient-pay-summary > div:nth-child(2n) {
+  border-right: 0;
+}
+.patient-pay-summary > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+.patient-pay-summary > div:nth-child(4) {
+  background: #fffaf1;
 }
 .patient-pay-summary span {
   display: block;
-  margin-bottom: 4px;
-  color: #849089;
-  font-size: 7.5px;
-  font-weight: 600;
+  margin-bottom: 6px;
+  color: #89948e;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
 }
 .patient-pay-summary strong {
-  color: #26372d;
+  display: block;
+  color: #33433a;
   font-family: var(--font-heading);
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
 }
-.patient-pay-summary > div:last-child strong {
+.patient-pay-summary > div:nth-child(2) strong {
+  color: #25362c;
+}
+.patient-pay-summary > div:nth-child(3) strong {
   color: var(--green);
 }
+.patient-pay-summary > div:last-child strong {
+  color: var(--amber);
+  font-size: 12px;
+}
 .patient-pay-field {
-  width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 17px;
 }
 .patient-pay-field label {
   display: block;
-  margin-bottom: 6px;
-  color: #35453b;
+  margin-bottom: 7px;
+  color: #35463c;
   font-size: 8.5px;
   font-weight: 700;
+  line-height: 1.2;
 }
 .patient-pay-field small {
   display: block;
-  margin-top: 5px;
-  color: #8a958f;
+  margin-top: 6px;
+  color: #8a958e;
   font-size: 7px;
+  line-height: 1.4;
 }
 .patient-pay-amount-input {
-  width: 100%;
-  min-height: 40px;
+  min-height: 50px;
   display: flex;
   align-items: center;
-  border: 1px solid #dce5df;
-  border-radius: 9px;
+  border: 1px solid #cfded5;
+  border-radius: 11px;
   background: #fff;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+.patient-pay-amount-input:hover {
+  border-color: #b8d2c1;
 }
 .patient-pay-amount-input:focus-within {
-  border-color: #6db18a;
-  box-shadow: 0 0 0 2px rgba(22, 128, 61, 0.08);
+  border-color: #8fc2a0;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(22, 128, 61, 0.08);
 }
 .patient-pay-amount-input span {
-  flex: 0 0 auto;
-  padding-left: 12px;
-  color: #68756d;
-  font-size: 9px;
+  width: 44px;
+  padding-left: 15px;
+  color: var(--green);
+  font-size: 12px;
   font-weight: 700;
 }
 .patient-pay-amount-input input {
   width: 100%;
-  min-width: 0;
-  height: 38px;
-  padding: 0 11px;
+  min-height: 48px;
+  padding: 0 14px 0 2px;
   border: 0;
   outline: 0;
   background: transparent;
-  color: #26352d;
-  font-size: 9px;
+  color: #25362c;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
 }
-.patient-pay-amount-input input:focus {
-  outline: 0;
-  border: 0;
-  box-shadow: none;
-}
-.patient-pay-amount-input input[type="number"] {
-  appearance: textfield;
-  -moz-appearance: textfield;
+.patient-pay-amount-input input::placeholder {
+  color: #a4ada7;
+  font-weight: 500;
 }
 .patient-pay-amount-input input[type="number"]::-webkit-inner-spin-button,
 .patient-pay-amount-input input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
   margin: 0;
 }
 .patient-pay-field select,
 .patient-pay-field textarea {
   width: 100%;
-  border: 1px solid #dce5df;
-  border-radius: 9px;
+  border: 1px solid #dfe7e2;
+  border-radius: 11px;
   outline: 0;
   background: #fff;
-  color: #34443b;
-  font-size: 9px;
+  color: #33433a;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+.patient-pay-field select:hover,
+.patient-pay-field textarea:hover {
+  border-color: #cbdcd2;
 }
 .patient-pay-field select {
-  height: 40px;
-  padding: 0 11px;
+  min-height: 48px;
+  padding: 0 13px;
+  font-size: 9px;
+  font-weight: 500;
+  appearance: auto;
 }
 .patient-pay-field textarea {
-  min-height: 62px;
-  padding: 10px 11px;
+  min-height: 76px;
+  padding: 11px 13px;
   resize: vertical;
+  font-size: 8.5px;
+  line-height: 1.5;
 }
 .patient-pay-field select:focus,
 .patient-pay-field textarea:focus {
-  border-color: #6db18a;
-  box-shadow: 0 0 0 2px rgba(22, 128, 61, 0.08);
+  border-color: #9bc8aa;
+  box-shadow: 0 0 0 3px rgba(22, 128, 61, 0.07);
+}
+.patient-payment-method-select {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.patient-payment-method-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.patient-payment-method-option {
+  position: relative;
+  min-width: 0;
+  min-height: 84px;
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid #dfe7e2;
+  border-radius: 11px;
+  background: #fff;
+  color: #35423b;
+  text-align: left;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.patient-payment-method-option:hover {
+  border-color: #b9d7c5;
+  background: #fbfdfc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(20, 50, 35, 0.05);
+}
+.patient-payment-method-option:focus-visible {
+  outline: 3px solid rgba(8, 120, 63, 0.16);
+  outline-offset: 2px;
+}
+.patient-payment-method-option.is-selected {
+  border-color: #58ae7d;
+  background: #f1faf5;
+  box-shadow:
+    0 0 0 3px rgba(8, 120, 63, 0.055),
+    0 5px 14px rgba(20, 50, 35, 0.045);
+}
+.patient-payment-method-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+  border-radius: 9px;
+  background: #eef5ff;
+  color: #3678d4;
+}
+.bank-option .patient-payment-method-icon {
+  background: #f3efff;
+  color: #7955c7;
+}
+.patient-payment-method-option.is-selected .patient-payment-method-icon {
+  background: #dceaff;
+  color: #2869c2;
+}
+.patient-payment-method-option.bank-option.is-selected
+  .patient-payment-method-icon {
+  background: #e7deff;
+  color: #6846b1;
+}
+.patient-payment-method-icon i {
+  font-size: 13px;
+}
+.patient-payment-method-option strong {
+  color: #29352e;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.patient-payment-method-option small {
+  color: #929b96;
+  font-size: 7px;
+  line-height: 1.3;
+}
+.patient-payment-method-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.patient-payment-method-option.is-selected .patient-payment-method-check {
+  opacity: 1;
+  transform: scale(1);
+}
+.patient-payment-method-check i {
+  font-size: 8px;
+}
+.patient-pay-field textarea::placeholder {
+  color: #9aa49e;
 }
 .patient-pay-process {
   width: 100%;
-  margin-top: -3px;
-  margin-bottom: 12px;
+  margin-top: -2px;
+  margin-bottom: 14px;
 }
 .patient-pay-process[hidden] {
   display: none;
 }
+.patient-payment-process-panel {
+  padding: 11px 12px;
+  border: 1px solid #d9e6f8;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+.patient-payment-process-panel.bank-transfer {
+  border-color: #e4dbf7;
+  background: #fbf9ff;
+}
+.patient-payment-process-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(80, 110, 150, 0.1);
+}
+.patient-payment-process-icon {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  background: #e8f1ff;
+  color: #3678d4;
+}
+.bank-transfer .patient-payment-process-icon {
+  background: #eee8ff;
+  color: #7955c7;
+}
+.patient-payment-process-icon i {
+  font-size: 11px;
+}
+.patient-payment-process-heading strong,
+.patient-payment-process-heading small {
+  display: block;
+}
+.patient-payment-process-heading strong {
+  color: #33433a;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+.patient-payment-process-heading small {
+  margin-top: 2px;
+  color: #7e8b83;
+  font-size: 7px;
+}
+.patient-payment-process-message {
+  margin: 9px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: #62766a;
+  font-size: 7.5px;
+  line-height: 1.5;
+}
+.patient-payment-process-message i {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #6786ad;
+}
 .patient-payment-process-status {
-  min-height: 38px;
-  padding: 8px 10px;
+  min-height: 40px;
+  padding: 9px 11px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   border: 1px solid #cdeedb;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #eaf7ef;
   color: #16814b;
   font-size: 8px;
@@ -1180,363 +1441,106 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.patient-payment-process-status button {
-  flex: 0 0 auto;
-  min-height: 24px;
-  padding: 0 9px;
-  border: 1px solid #b9ddc6;
-  border-radius: 6px;
-  background: #fff;
-  color: var(--green);
-  font-size: 7.5px;
-  font-weight: 700;
+.patient-payment-process-status.processing {
+  border-color: #d7e3eb;
+  background: #f1f6f9;
+  color: #5f7480;
 }
-.patient-payment-process-status button:hover {
-  background: #f4fbf6;
+.patient-payment-process-status.success {
+  border-color: #cdeedb;
+  background: #eaf7ef;
+  color: #16814b;
 }
-.patient-payment-verification-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px;
+.patient-payment-process-status.error {
+  border-color: #f0d3d3;
+  background: #fff5f5;
+  color: #b04747;
 }
-.patient-payment-verification-modal[hidden] {
-  display: none;
+.patient-payment-process-status.stacked {
+  display: block;
 }
-.patient-payment-verification-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(14, 28, 20, 0.48);
-}
-.patient-payment-verification-dialog {
-  position: relative;
-  z-index: 1;
-  width: min(500px, 100%);
-  max-height: calc(100vh - 28px);
-  overflow: auto;
+.xendit-action-value {
+  margin-top: 8px;
+  padding: 8px 9px;
   border: 1px solid #dfe7e2;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 18px 55px rgba(20, 40, 28, 0.2);
-}
-.patient-payment-verification-close {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 3;
-  width: 31px;
-  height: 31px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #e0e7e2;
   border-radius: 7px;
   background: #fff;
-  color: #78847d;
-}
-.patient-payment-verification-close:hover {
-  border-color: #cbded2;
-  background: #f1f8f4;
-  color: var(--green);
-}
-.patient-payment-verification-box {
-  padding: 18px;
-}
-.patient-payment-verification-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-right: 42px;
-  margin-bottom: 13px;
-}
-.patient-payment-verification-icon {
-  width: 39px;
-  height: 39px;
-  flex: 0 0 39px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: #eaf7ef;
-  color: var(--green);
-  font-size: 14px;
-}
-.patient-payment-verification-label {
-  display: block;
-  margin-bottom: 3px;
-  color: var(--green);
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-.patient-payment-verification-header h3 {
-  margin: 0;
-  color: #1d2b23;
-  font-family: var(--font-heading);
-  font-size: 14px;
-  line-height: 1.25;
-}
-.patient-payment-verification-header p {
-  margin: 3px 0 0;
-  color: #7f8b84;
-  font-size: 8px;
-  line-height: 1.45;
-}
-.patient-payment-verification-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 11px;
-}
-.patient-payment-verification-summary > div {
-  min-height: 57px;
-  padding: 9px 10px;
-  border: 1px solid #e0e8e3;
-  border-radius: 8px;
-  background: #f8fbf9;
-}
-.patient-payment-verification-summary span {
-  display: block;
-  margin-bottom: 4px;
-  color: #849089;
-  font-size: 7px;
-  font-weight: 600;
-}
-.patient-payment-verification-summary strong {
-  color: #26372d;
-  font-family: var(--font-heading);
-  font-size: 10px;
-}
-.patient-payment-verification-summary > div:last-child strong {
-  color: var(--green);
-}
-.patient-payment-verification-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin-top: 11px;
-}
-.patient-payment-verification-field {
-  min-width: 0;
-}
-.patient-payment-verification-field label {
-  display: block;
-  margin-bottom: 5px;
-  color: #35453b;
-  font-size: 8px;
-  font-weight: 700;
-}
-.patient-payment-verification-field input {
-  width: 100%;
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid #dce5df;
-  border-radius: 8px;
-  outline: 0;
-  background: #fff;
-  color: #34443b;
-  font-size: 8.5px;
-}
-.patient-payment-verification-field input::placeholder {
-  color: #929b95;
-}
-.patient-payment-verification-field input:focus {
-  border-color: #6db18a;
-  box-shadow: 0 0 0 2px rgba(22, 128, 61, 0.08);
-}
-.patient-payment-verification-amount {
-  position: relative;
-  width: 100%;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  border: 1px solid #dce5df;
-  border-radius: 8px;
-  background: #fff;
-}
-.patient-payment-verification-amount:focus-within {
-  border-color: #6db18a;
-  box-shadow: 0 0 0 2px rgba(22, 128, 61, 0.08);
-}
-.patient-payment-verification-amount span {
-  flex: 0 0 auto;
-  padding-left: 10px;
-  color: #68756d;
-  font-size: 8.5px;
-  font-weight: 700;
-}
-.patient-payment-verification-amount input {
-  width: 100%;
-  height: 36px;
-  padding: 0 10px 0 5px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.patient-payment-verification-amount input:focus {
-  border: 0;
-  box-shadow: none;
-}
-.patient-payment-verification-static {
-  width: 100%;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  border: 1px solid #dce5df;
-  border-radius: 8px;
-  background: #f8fbf9;
-  color: #26372d;
-  font-family: var(--font-heading);
-  font-size: 9px;
-  font-weight: 700;
-}
-.patient-payment-verification-qr {
-  margin-top: 10px;
-  padding: 11px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  border: 1px dashed #d3e0d9;
-  border-radius: 9px;
-  background: #fbfdfc;
-  text-align: center;
-}
-.patient-payment-verification-qr-box {
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcebe2;
-  border-radius: 8px;
-  background: #eef8f2;
-  color: var(--green);
-}
-.patient-payment-verification-qr-box i {
-  font-size: 25px;
-}
-.patient-payment-verification-qr strong {
-  color: #34443b;
-  font-size: 8.5px;
-  font-weight: 700;
-}
-.patient-payment-verification-qr span {
-  color: #7f8b84;
-  font-size: 7px;
+  color: #536158;
+  font-size: 7.5px;
   line-height: 1.4;
-}
-.patient-payment-verification-bank {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 10px;
-}
-.patient-payment-verification-bank div {
-  min-height: 35px;
-  padding: 7px 9px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border: 1px solid #e6ece8;
-  border-radius: 8px;
-  background: #fbfcfb;
-}
-.patient-payment-verification-bank span {
-  color: #8d9791;
-  font-size: 7px;
-}
-.patient-payment-verification-bank strong {
-  color: #28332c;
-  font-size: 8px;
-  text-align: right;
-}
-.patient-payment-verification-confirm {
-  width: 100%;
-  min-height: 39px;
-  margin-top: 12px;
-}
-.primary-button.patient-payment-verification-confirm {
-  font-size: 8.5px;
+  word-break: break-word;
+  white-space: normal;
 }
 .patient-pay-actions {
+  margin-top: 20px;
+  padding-top: 16px;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding-top: 12px;
   border-top: 1px solid #e4ebe6;
 }
 .secondary-button,
 .primary-button {
-  min-height: 38px;
-  padding: 0 17px;
-  border-radius: 8px;
+  min-height: 42px;
+  padding: 0 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 10px;
   font-size: 8.5px;
   font-weight: 700;
+  line-height: 1;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 .secondary-button {
-  border: 1px solid #dce4df;
+  border: 1px solid #dfe7e2;
   background: #fff;
-  color: #536159;
+  color: #68766d;
+}
+.secondary-button:hover {
+  border-color: #cbded2;
+  background: #f7faf8;
+  color: #425249;
+  transform: translateY(-1px);
 }
 .primary-button {
-  border: 0;
+  border: 1px solid #cce3d4;
   background: var(--green);
   color: #fff;
 }
 .primary-button:hover:not(:disabled) {
+  border-color: var(--green-dark);
   background: var(--green-dark);
+  transform: translateY(-1px);
 }
 .primary-button:disabled {
-  opacity: 0.45;
   cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+.mobile-payment-patient {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #24332a;
 }
 @media (max-width: 1100px) {
   .payments-main {
-    padding: 22px 26px 34px;
+    padding: 20px;
   }
   .payment-table {
-    min-width: 1080px;
+    min-width: 1180px;
   }
 }
-@media (max-width: 850px) {
-  .payments-main {
-    padding: 20px 21px 32px;
-  }
+@media (max-width: 800px) {
   .payment-summary-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .payment-summary-card {
-    min-height: 100px;
-  }
-}
-@media (max-width: 700px) {
-  .payments-main {
-    padding: 17px 14px 28px;
-  }
-  .payments-page-header {
-    min-height: 72px;
-    padding: 15px 16px;
-  }
-  .payments-heading h1 {
-    font-size: 17px;
-  }
-  .payment-history-header {
-    min-height: 74px;
-    padding: 15px;
-    align-items: flex-start;
-  }
-  .payment-filters {
-    padding: 9px 15px;
-    overflow-x: auto;
   }
   .payment-table-wrapper {
     display: none;
@@ -1544,9 +1548,12 @@ button {
   .payment-mobile-list {
     display: block;
   }
+  .payment-history-header {
+    align-items: flex-start;
+  }
   .mobile-payment-item {
-    padding: 14px 15px;
-    border-bottom: 1px solid #edf1ee;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-soft);
   }
   .mobile-payment-item:last-child {
     border-bottom: 0;
@@ -1558,37 +1565,38 @@ button {
     gap: 10px;
   }
   .mobile-payment-id {
-    color: #26362d;
+    color: #24332a;
     font-family: var(--font-heading);
     font-size: 9px;
     font-weight: 700;
   }
   .mobile-payment-date {
     margin-top: 3px;
-    color: #909a94;
-    font-size: 7.5px;
+    color: #89948e;
+    font-size: 7px;
   }
   .mobile-payment-service {
-    margin: 10px 0 8px;
-    color: #45564c;
+    margin-top: 9px;
+    color: #3b4c42;
     font-size: 9px;
-    font-weight: 600;
+    font-weight: 700;
   }
   .mobile-payment-details {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+    margin-top: 10px;
   }
   .mobile-payment-detail {
     padding: 8px;
-    border: 1px solid #e7ece8;
+    border: 1px solid #e6ece8;
     border-radius: 7px;
     background: #fbfcfb;
   }
   .mobile-payment-detail span {
     display: block;
     margin-bottom: 3px;
-    color: #929b96;
+    color: #89948e;
     font-size: 6.5px;
   }
   .mobile-payment-detail strong {
@@ -1607,126 +1615,164 @@ button {
     align-items: center;
     gap: 5px;
   }
-  .payment-modal,
-  .receipt-modal,
-  .patient-pay-modal,
-  .patient-payment-verification-modal {
-    padding: 10px;
-  }
-  .payment-modal-dialog,
-  .receipt-modal-dialog,
-  .patient-pay-dialog,
-  .patient-payment-verification-dialog {
-    max-height: calc(100vh - 20px);
-  }
-  .payment-process-box {
-    padding: 12px;
-  }
-  .payment-process-header {
-    font-size: 9.5px;
-  }
-  .process-info-value input {
-    font-size: 9px;
-  }
-  .receipt-info {
-    grid-template-columns: 1fr;
-  }
-  .receipt-modal-actions {
-    flex-direction: column-reverse;
-  }
-  .receipt-secondary-button,
-  .receipt-primary-button {
-    width: 100%;
-  }
-  .patient-payment-verification-box {
-    padding: 16px;
-  }
-  .patient-payment-verification-fields {
-    grid-template-columns: 1fr;
-  }
-}
-@media (max-width: 480px) {
   .payments-main {
-    padding: 13px 10px 23px;
+    padding: 15px;
   }
   .payments-page-header {
-    padding: 14px;
-  }
-  .payments-heading h1 {
-    font-size: 16px;
-  }
-  .payments-heading p {
-    font-size: 8.5px;
-  }
-  .payment-summary-card {
-    min-height: 96px;
-    padding: 12px 15px;
-  }
-  .summary-icon {
-    width: 32px;
-    height: 32px;
-    flex-basis: 32px;
-  }
-  .payment-summary-card strong {
-    font-size: 20px;
+    padding: 15px;
   }
   .payment-history-header {
-    padding: 14px;
-  }
-  .transaction-count {
-    font-size: 7px;
+    padding: 14px 16px;
   }
   .payment-filters {
-    padding: 8px 14px;
+    padding: 8px 16px;
   }
-  .modal-detail-grid {
-    grid-template-columns: 1fr;
-  }
-  .modal-detail-item {
-    border-right: 0;
-  }
-  .modal-detail-item:last-child {
-    border-bottom: 0;
-  }
-  .qr-placeholder {
-    padding: 12px;
-  }
-  .qr-box {
-    width: 64px;
-    height: 64px;
-  }
-  .bank-info-box div {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .bank-info-box strong {
-    text-align: left;
+  .patient-pay-dialog {
+    width: 100%;
   }
   .patient-pay-summary {
     grid-template-columns: 1fr;
   }
-  .patient-pay-actions {
-    flex-direction: column-reverse;
+  .patient-pay-summary > div {
+    border-right: 0;
   }
-  .patient-pay-actions button {
-    width: 100%;
+  .patient-pay-summary > div:nth-last-child(-n + 2) {
+    border-bottom: 1px solid #e3e9e5;
+  }
+  .patient-pay-summary > div:last-child {
+    border-bottom: 0;
+  }
+  .patient-payment-method-options {
+    grid-template-columns: 1fr;
+  }
+  .receipt-info {
+    grid-template-columns: 1fr;
+  }
+  .receipt-info-item {
+    border-right: 0;
   }
   .receipt-paper {
     padding: 16px;
   }
-  .patient-payment-verification-summary {
-    grid-template-columns: 1fr;
+  .patient-pay-actions {
+    flex-direction: column-reverse;
   }
-  .patient-payment-verification-bank div {
-    align-items: flex-start;
+  .secondary-button,
+  .primary-button {
+    width: 100%;
+  }
+}
+@media (max-width: 480px) {
+  .payments-main {
+    padding: 10px;
+  }
+  .payment-summary-card {
+    min-height: 100px;
+    padding: 13px;
+  }
+  .payment-history-header {
     flex-direction: column;
-    gap: 3px;
   }
-  .patient-payment-verification-bank strong {
-    text-align: left;
+  .transaction-count {
+    align-self: flex-start;
   }
-  .patient-payment-verification-header h3 {
-    font-size: 13px;
+  .patient-pay-body,
+  .payment-modal-body,
+  .receipt-modal-body {
+    padding: 14px;
+  }
+  .payment-modal,
+  .receipt-modal,
+  .patient-pay-modal {
+    padding: 10px;
+  }
+  .payment-modal-dialog,
+  .receipt-modal-dialog,
+  .patient-pay-dialog {
+    max-height: calc(100vh - 20px);
+  }
+}
+.page-icon {
+  display: none !important;
+}
+.payments-main {
+  padding: 24px 30px 32px;
+}
+.payments-page-header {
+  min-height: 74px;
+  margin-bottom: 16px;
+  padding: 16px 22px;
+}
+.page-title-row {
+  gap: 0;
+}
+.payments-heading h1 {
+  font-size: 20px;
+  line-height: 1.2;
+}
+.payments-heading p {
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+.payment-summary-grid {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.payment-summary-card {
+  min-height: 108px;
+  padding: 15px 18px;
+  column-gap: 11px;
+}
+.summary-icon {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+.payment-summary-card strong {
+  font-size: 23px;
+}
+.payment-history-card {
+  margin-bottom: 16px;
+}
+.payment-history-header {
+  min-height: 72px;
+  padding: 16px 22px;
+}
+.payment-filters {
+  min-height: 48px;
+  padding: 8px 22px;
+}
+.payment-table th {
+  height: 48px;
+}
+.payment-table td {
+  height: 78px;
+}
+@media (max-width: 800px) {
+  .payment-history-header {
+    padding: 14px 16px;
+  }
+  .payment-filters {
+    padding: 8px 16px;
+  }
+}
+@media (max-width: 768px) {
+  .payments-main {
+    padding: 14px 14px 24px;
+  }
+  .payments-page-header {
+    min-height: 0;
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+  .payments-heading {
+    min-height: 40px;
+    padding-left: 52px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .payments-heading h1 {
+    margin-bottom: 3px;
   }
 }

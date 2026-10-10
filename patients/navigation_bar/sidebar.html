@@ -7,31 +7,26 @@
     <i class="fa-solid fa-bars"></i>
   </button>
 </header>
-
 <aside class="sidebar" id="sidebar">
   <button class="toggle-btn" id="sidebarToggle" aria-label="Toggle Navigation">
     <i class="fa-solid fa-chevron-left" id="toggleIcon"></i>
   </button>
-
   <div class="sidebar-top">
     <div class="sidebar-patient-profile" id="activePatientProfileTrigger">
       <div class="sidebar-patient-avatar">
         <img id="activePatientImage" src="" alt="Patient profile" />
         <span id="activePatientInitials">PT</span>
       </div>
-
       <div class="sidebar-patient-info">
         <span class="sidebar-patient-name" id="activePatientName">
           Patient
         </span>
-
         <span class="sidebar-patient-status">
           <span class="patient-status-dot"></span>
           Active now
         </span>
       </div>
     </div>
-
     <nav class="sidebar-menu">
       <a
         href="../patients/dashboard/dashboard.html"
@@ -43,7 +38,6 @@
         <i class="fa-solid fa-border-all"></i>
         <span class="menu-text">Dashboard</span>
       </a>
-
       <a
         href="../patients/appointment/appointment.html"
         data-path="patients/appointment/appointment.html"
@@ -51,10 +45,9 @@
         data-page="appointment"
         title="Appointment"
       >
-        <i class="fa-regular fa-calendar-check"></i>  
+        <i class="fa-regular fa-calendar-check"></i>
         <span class="menu-text">Appointment</span>
       </a>
-
       <a
         href="../patients/medical_records/medical_records.html"
         data-path="patients/medical_records/medical_records.html"
@@ -65,7 +58,6 @@
         <i class="fa-solid fa-file-medical"></i>
         <span class="menu-text">Medical Records</span>
       </a>
-
       <a
         href="../patients/payments/payments.html"
         data-path="patients/payments/payments.html"
@@ -76,7 +68,6 @@
         <i class="fa-regular fa-credit-card"></i>
         <span class="menu-text">Payments</span>
       </a>
-
       <a
         href="#logout"
         class="menu-item btn-logout btn-logout-mobile"
@@ -88,34 +79,26 @@
       </a>
     </nav>
   </div>
-
   <div class="sidebar-footer">
     <a href="#logout" class="btn-logout" id="logoutTriggerBtn" title="Logout">
       <i class="fa-solid fa-right-from-bracket logout-icon"></i>
       <span class="logout-text">Logout</span>
     </a>
-
     <div class="sidebar-footer-divider"></div>
   </div>
 </aside>
-
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
 <div class="logout-modal-backdrop" id="logoutModalBackdrop">
   <div class="logout-modal-card">
     <div class="logout-modal-icon">
       <i class="fa-solid fa-triangle-exclamation"></i>
     </div>
-
     <h3>Ready to Leave?</h3>
-
     <p>Are you sure you want to log out of your session?</p>
-
     <div class="logout-modal-actions">
       <button type="button" class="btn-modal-cancel" id="logoutCancelBtn">
         Cancel
       </button>
-
       <button type="button" class="btn-modal-confirm" id="logoutConfirmBtn">
         Yes, Log Out
       </button>

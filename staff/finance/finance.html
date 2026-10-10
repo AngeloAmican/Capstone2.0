@@ -18,6 +18,883 @@
     <link rel="stylesheet" href="../../navigation_bar/sidebar.css" />
     <link rel="stylesheet" href="finance.css" />
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      .payment-method-form-group {
+        grid-column: 1/-1;
+      }
+      .payment-method-selector-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .payment-method-selector-label span {
+        color: #d94b4b;
+      }
+      .payment-method-options {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        width: 100%;
+        margin-top: 7px;
+      }
+      .payment-method-option {
+        position: relative;
+        min-height: 92px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 4px;
+        padding: 13px 14px;
+        border: 1px solid #dfe7e2;
+        border-radius: 13px;
+        background: #fff;
+        color: #35423b;
+        text-align: left;
+        cursor: pointer;
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease,
+          box-shadow 0.2s ease,
+          transform 0.2s ease;
+      }
+      .payment-method-option:hover {
+        border-color: #b9d7c5;
+        background: #fbfdfc;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(20, 50, 35, 0.035);
+      }
+      .payment-method-option.is-selected {
+        border-color: #58ae7d;
+        background: #f1faf5;
+        box-shadow:
+          0 0 0 3px rgba(8, 120, 63, 0.055),
+          0 5px 14px rgba(20, 50, 35, 0.045);
+      }
+      .payment-method-option-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2px;
+        border-radius: 10px;
+        transition:
+          background 0.2s ease,
+          color 0.2s ease,
+          transform 0.2s ease;
+      }
+      .payment-method-option.cash-option .payment-method-option-icon {
+        background: #eaf7ef;
+        color: #16803d;
+      }
+      .payment-method-option.gcash-option .payment-method-option-icon {
+        background: #eef5ff;
+        color: #3678d4;
+      }
+      .payment-method-option.bank-option .payment-method-option-icon {
+        background: #f3efff;
+        color: #7955c7;
+      }
+      .payment-method-option.cash-option:hover .payment-method-option-icon {
+        background: #dff3e7;
+        color: #08783f;
+      }
+      .payment-method-option.gcash-option:hover .payment-method-option-icon {
+        background: #e1edff;
+        color: #2869c2;
+      }
+      .payment-method-option.bank-option:hover .payment-method-option-icon {
+        background: #eae3ff;
+        color: #6846b1;
+      }
+      .payment-method-option.is-selected.cash-option
+        .payment-method-option-icon {
+        background: #d9f1e2;
+        color: #08783f;
+      }
+      .payment-method-option.is-selected.gcash-option
+        .payment-method-option-icon {
+        background: #dceaff;
+        color: #2869c2;
+      }
+      .payment-method-option.is-selected.bank-option
+        .payment-method-option-icon {
+        background: #e7deff;
+        color: #6846b1;
+      }
+      .payment-method-option.is-selected .payment-method-option-icon {
+        transform: scale(1.02);
+      }
+      .payment-method-option-icon i {
+        font-size: 15px;
+      }
+      .payment-method-option strong {
+        display: block;
+        color: #29352e;
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .payment-method-option small {
+        display: block;
+        color: #929b96;
+        font-size: 8px;
+        font-weight: 400;
+        line-height: 1.3;
+      }
+      .payment-method-option-check {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 19px;
+        height: 19px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #08783f;
+        color: #fff;
+        opacity: 0;
+        transform: scale(0.8);
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+      }
+      .payment-method-option.is-selected .payment-method-option-check {
+        opacity: 1;
+        transform: scale(1);
+      }
+      .payment-method-option-check i {
+        font-size: 9px;
+      }
+      .payment-method-native-select {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+      .payment-status-hidden {
+        display: none !important;
+      }
+      .balance-top-group {
+        grid-column: 2;
+      }
+
+      .discount-type-group {
+        grid-column: 1;
+      }
+
+      .discount-top-group {
+        grid-column: 2;
+      }
+
+      .payment-paid-group {
+        grid-column: 1;
+      }
+
+      .payment-change-group {
+        grid-column: 2;
+      }
+
+      .discount-type-group select {
+        width: 100%;
+        height: 39px;
+        padding: 0 12px;
+        border: 1px solid #dce6e0;
+        border-radius: 10px;
+        background: #fff;
+        color: #29352e;
+        font-family: inherit;
+        font-size: 10px;
+        font-weight: 600;
+        outline: none;
+        cursor: pointer;
+      }
+
+      .discount-type-group select:focus {
+        border-color: #a9d2ba;
+        box-shadow: 0 0 0 3px rgba(8, 120, 63, 0.06);
+      }
+
+      .payment-change-group .calculated-input {
+        background: #f3faf6;
+        border-color: #d4e9dc;
+      }
+
+      .payment-change-group .calculated-input input {
+        background: #f3faf6;
+        color: #08783f;
+        font-weight: 800;
+      }
+
+      #paymentDiscount {
+        cursor: default;
+      }
+      .payment-modal {
+        width: min(650px, 100%);
+        max-height: calc(100vh - 34px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd6d0 transparent;
+      }
+      .payment-modal::-webkit-scrollbar {
+        width: 5px;
+      }
+      .payment-modal::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .payment-modal::-webkit-scrollbar-thumb {
+        background: #cbd6d0;
+        border-radius: 10px;
+      }
+      .payment-modal .modal-header {
+        padding: 17px 22px;
+      }
+      .payment-modal #paymentForm {
+        padding: 17px 22px 18px;
+      }
+      .payment-modal .form-grid {
+        gap: 9px 14px;
+      }
+      .payment-modal .form-group label {
+        margin-bottom: 5px;
+      }
+      .payment-modal .form-group input,
+      .payment-modal .form-group select,
+      .payment-modal .form-group textarea,
+      .payment-modal .amount-input {
+        height: 39px;
+      }
+      .payment-modal .field-help {
+        margin-top: 4px;
+      }
+      .payment-modal .modal-actions {
+        margin-top: 14px;
+        padding-top: 14px;
+      }
+      .payment-modal .appointment-payment-info {
+        padding: 12px 22px 13px;
+      }
+      .payment-modal .appointment-info-grid {
+        gap: 10px 28px;
+      }
+      .payment-modal .calculated-input {
+        background: #f3faf6;
+        border-color: #d4e9dc;
+      }
+      .payment-modal .calculated-input input {
+        background: #f3faf6;
+        color: #08783f;
+        font-weight: 800;
+      }
+      .payment-modal .full-width-process {
+        margin-top: 0;
+      }
+      .payment-modal .payment-process-box {
+        width: 100%;
+        padding: 13px 14px;
+        border: 1px solid #dfe9e3;
+        border-radius: 14px;
+        background: #f8fbf9;
+        box-shadow: 0 4px 14px rgba(20, 50, 35, 0.035);
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .payment-modal .payment-process-box[data-method="GCash"] {
+        border-color: #d9e6f8;
+        background: #f8fbff;
+      }
+      .payment-modal .payment-process-box[data-method="Bank Transfer"] {
+        border-color: #e4dbf7;
+        background: #fbf9ff;
+      }
+      .payment-modal .payment-process-header {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        margin: 0 0 11px;
+        padding: 0 0 10px;
+        border-bottom: 1px solid #e7eee9;
+        color: #29352f;
+        font-size: 10.5px;
+        font-weight: 800;
+      }
+      .payment-modal
+        .payment-process-box[data-method="GCash"]
+        .payment-process-header {
+        border-bottom-color: #e1eaf6;
+      }
+      .payment-modal
+        .payment-process-box[data-method="Bank Transfer"]
+        .payment-process-header {
+        border-bottom-color: #e9e2f7;
+      }
+      .payment-modal .payment-process-header svg {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        padding: 8px;
+        border-radius: 9px;
+        background: #eaf7ef;
+        color: #08783f;
+      }
+      .payment-modal
+        .payment-process-box[data-method="GCash"]
+        .payment-process-header
+        svg {
+        background: #eaf2ff;
+        color: #3678d4;
+      }
+      .payment-modal
+        .payment-process-box[data-method="Bank Transfer"]
+        .payment-process-header
+        svg {
+        background: #f0eaff;
+        color: #7955c7;
+      }
+      .payment-modal .process-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 9px;
+      }
+      .payment-modal .process-field label {
+        display: block;
+        margin-bottom: 5px;
+        color: #66716b;
+        font-size: 8.5px;
+        font-weight: 700;
+      }
+      .payment-modal .process-field .amount-input {
+        height: 38px;
+        border-radius: 9px;
+        background: #fff;
+      }
+      .payment-modal .process-field .amount-input input {
+        height: 36px;
+        background: #fff;
+        font-size: 10px;
+      }
+      .payment-modal .payment-process-status {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        margin-top: 7px;
+        padding: 8px 9px;
+        border: 1px solid #d7e9dd;
+        border-radius: 9px;
+        background: #f1faf5;
+        color: #5d7567;
+        font-size: 7.8px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+      .payment-modal
+        .payment-process-box[data-method="GCash"]
+        .payment-process-status {
+        border-color: #d9e6f7;
+        background: #f2f7ff;
+        color: #61738a;
+      }
+      .payment-modal
+        .payment-process-box[data-method="Bank Transfer"]
+        .payment-process-status {
+        border-color: #e5dcf5;
+        background: #f7f3ff;
+        color: #706681;
+      }
+      .payment-modal .payment-process-status > div {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        min-width: 0;
+        width: 100%;
+      }
+      .payment-modal .payment-process-status svg {
+        width: 13px;
+        height: 13px;
+        flex-shrink: 0;
+        margin-top: 1px;
+        color: #16814b;
+      }
+      .payment-modal
+        .payment-process-box[data-method="GCash"]
+        .payment-process-status
+        svg {
+        color: #3678d4;
+      }
+      .payment-modal
+        .payment-process-box[data-method="Bank Transfer"]
+        .payment-process-status
+        svg {
+        color: #7955c7;
+      }
+      .payment-modal .payment-process-status span {
+        min-width: 0;
+        flex: 1;
+        overflow: visible;
+        text-overflow: unset;
+        white-space: normal;
+        color: inherit;
+        font-size: 7.8px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+      .payment-modal .payment-process-instructions {
+        margin-top: 8px;
+        padding: 9px 10px;
+        border: 1px solid #dfe8e2;
+        border-radius: 9px;
+        background: #fff;
+      }
+      .payment-modal .payment-process-instructions-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        color: #34423a;
+        font-size: 8px;
+        font-weight: 600;
+        line-height: 1.45;
+      }
+      .payment-modal .payment-process-instructions-header svg {
+        width: 13px;
+        height: 13px;
+        flex-shrink: 0;
+        margin-top: 1px;
+        color: #08783f;
+      }
+      .payment-modal .payment-process-description {
+        margin-top: 6px;
+        color: #68746d;
+        font-size: 8px;
+        line-height: 1.45;
+      }
+      .payment-modal .payment-process-meta {
+        margin-top: 7px;
+        color: #7a857f;
+        font-size: 7.5px;
+        line-height: 1.45;
+      }
+      .payment-modal .payment-process-amount {
+        min-width: 110px;
+        padding: 7px 10px;
+        border-radius: 9px;
+      }
+      .patient-cell {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+        min-width: 165px;
+      }
+      .patient-cell strong {
+        display: block;
+        min-width: 0;
+        color: #18231d;
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .patient-cell > span:not(.patient-initials) {
+        display: block;
+        min-width: 0;
+        margin-top: 3px;
+        color: #98a39d;
+        font-size: 8.5px;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .patient-cell-info {
+        min-width: 0;
+      }
+      .patient-initials {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #cce9d7;
+        border-radius: 11px;
+        background: linear-gradient(145deg, #f0faf4 0%, #dff2e7 100%);
+        color: #08783f;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.85),
+          0 3px 8px rgba(8, 120, 63, 0.055);
+      }
+      .patient-cell:hover .patient-initials {
+        border-color: #a9d8bb;
+        background: linear-gradient(145deg, #eaf8f0 0%, #d5eedf 100%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 4px 10px rgba(8, 120, 63, 0.08);
+      }
+      .patient-cell:hover strong {
+        color: #08783f;
+      }
+      .payment-history-section {
+        margin-top: 18px;
+      }
+      .payment-history-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+      .payment-history-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border: 1px solid #d8e8de;
+        border-radius: 999px;
+        background: #f2faf5;
+        color: #08783f;
+        font-size: 8px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .payment-history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .payment-history-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 11px 12px;
+        border: 1px solid #e2e9e5;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(22, 50, 35, 0.025);
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease,
+          box-shadow 0.2s ease,
+          transform 0.2s ease;
+      }
+      .payment-history-item:hover {
+        border-color: #cfe1d6;
+        background: #fbfdfc;
+        box-shadow: 0 4px 12px rgba(22, 50, 35, 0.045);
+        transform: translateY(-1px);
+      }
+      .payment-history-item-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .payment-history-method-icon {
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+        border: 1px solid #cfe8d9;
+        border-radius: 10px;
+        background: #eaf7ef;
+        color: #08783f;
+      }
+      .payment-history-method-icon svg {
+        width: 15px;
+        height: 15px;
+      }
+      .payment-history-item-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .payment-history-item-info strong {
+        color: #29352e;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+      .payment-history-item-info span {
+        margin-top: 3px;
+        color: #929c96;
+        font-size: 7.5px;
+        font-weight: 500;
+        line-height: 1.2;
+      }
+      .payment-history-item-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+      .payment-history-item-right strong {
+        color: #18231d;
+        font-size: 9.5px;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+      .payment-history-item-right span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 17px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #f3f7f4;
+        color: #7f8b84;
+        font-size: 6.8px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .payment-history-item.gcash-history .payment-history-method-icon {
+        border-color: #d6e4f8;
+        background: #edf5ff;
+        color: #3678d4;
+      }
+      .payment-history-item.gcash-history .payment-history-item-right span {
+        background: #eef5ff;
+        color: #3678d4;
+      }
+      .payment-history-item.bank-history .payment-history-method-icon {
+        border-color: #e2d8f5;
+        background: #f3efff;
+        color: #7955c7;
+      }
+      .payment-history-item.bank-history .payment-history-item-right span {
+        background: #f3efff;
+        color: #7955c7;
+      }
+      .payment-history-item.cash-history .payment-history-method-icon {
+        border-color: #cfe8d9;
+        background: #eaf7ef;
+        color: #08783f;
+      }
+      .payment-history-item.cash-history .payment-history-item-right span {
+        background: #eef8f2;
+        color: #08783f;
+      }
+      .payment-history-empty {
+        padding: 22px 14px;
+        border: 1px dashed #dce6e0;
+        border-radius: 12px;
+        background: #fafcfb;
+        text-align: center;
+      }
+      .payment-history-empty-icon {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        border-radius: 11px;
+        background: #eef7f1;
+        color: #08783f;
+      }
+      .payment-history-empty-icon svg {
+        width: 17px;
+        height: 17px;
+      }
+      .payment-history-empty strong {
+        display: block;
+        color: #39453e;
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .payment-history-empty p {
+        margin: 4px 0 0;
+        color: #98a19c;
+        font-size: 7.5px;
+        line-height: 1.4;
+      }
+      @media (max-width: 700px) {
+        .payment-method-options {
+          grid-template-columns: 1fr;
+        }
+
+        .payment-method-option {
+          min-height: 78px;
+        }
+
+        .balance-top-group,
+        .discount-type-group,
+        .discount-top-group,
+        .payment-paid-group,
+        .payment-change-group {
+          grid-column: 1;
+        }
+
+        .patient-cell {
+          min-width: 145px;
+        }
+      }
+      @media (max-width: 650px) {
+        .payment-modal {
+          max-height: calc(100vh - 24px);
+        }
+        .payment-modal .modal-header {
+          padding: 15px 18px;
+        }
+        .payment-modal #paymentForm {
+          padding: 16px 18px 18px;
+        }
+        .payment-modal .form-grid {
+          gap: 10px;
+        }
+        .payment-modal .appointment-payment-info {
+          padding: 12px 18px 13px;
+        }
+        .payment-modal .payment-process-box {
+          padding: 12px;
+        }
+        .payment-modal .payment-process-header svg {
+          width: 30px;
+          height: 30px;
+          padding: 7px;
+        }
+        .payment-history-item {
+          padding: 10px;
+        }
+        .payment-history-method-icon {
+          width: 32px;
+          height: 32px;
+          flex-basis: 32px;
+        }
+        .patient-cell {
+          grid-template-columns: 36px minmax(0, 1fr);
+          gap: 8px;
+        }
+        .patient-initials {
+          width: 36px;
+          height: 36px;
+        }
+      }
+      .card-header-icon {
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #cfe9d9;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #effaf4 0%, #e0f3e8 100%);
+        color: #08783f;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 5px 12px rgba(8, 120, 63, 0.07);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+      .card-header-icon svg {
+        width: 23px;
+        height: 23px;
+        stroke-width: 2.2;
+      }
+      .card-header:hover .card-header-icon {
+        transform: translateY(-1px);
+        background: linear-gradient(145deg, #e8f8ef 0%, #d9efe2 100%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.95),
+          0 7px 15px rgba(8, 120, 63, 0.1);
+      }
+      .finance-overview-card-icon {
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+        border-radius: 16px;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+      .finance-overview-card-icon svg {
+        width: 23px;
+        height: 23px;
+        stroke-width: 2.2;
+      }
+      .finance-overview-card:nth-child(1) .finance-overview-card-icon {
+        border-color: #cfe9d9;
+        background: linear-gradient(145deg, #effaf4 0%, #e0f3e8 100%);
+        color: #08783f;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 4px 10px rgba(8, 120, 63, 0.06);
+      }
+      .finance-overview-card:nth-child(2) .finance-overview-card-icon {
+        border-color: #d5e5f8;
+        background: linear-gradient(145deg, #f0f6ff 0%, #e3efff 100%);
+        color: #3678d4;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 4px 10px rgba(54, 120, 212, 0.06);
+      }
+      .finance-overview-card:nth-child(3) .finance-overview-card-icon {
+        border-color: #e2d8f5;
+        background: linear-gradient(145deg, #f6f2ff 0%, #ebe4ff 100%);
+        color: #7955c7;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 4px 10px rgba(121, 85, 199, 0.06);
+      }
+      .finance-overview-card:nth-child(4) .finance-overview-card-icon {
+        border-color: #f2dfbd;
+        background: linear-gradient(145deg, #fff8ea 0%, #fff0d6 100%);
+        color: #c47b17;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 4px 10px rgba(196, 123, 23, 0.06);
+      }
+      .finance-overview-card:hover .finance-overview-card-icon {
+        transform: translateY(-2px) scale(1.02);
+      }
+      .finance-overview-card:nth-child(1):hover .finance-overview-card-icon {
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.95),
+          0 7px 15px rgba(8, 120, 63, 0.11);
+      }
+      .finance-overview-card:nth-child(2):hover .finance-overview-card-icon {
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.95),
+          0 7px 15px rgba(54, 120, 212, 0.11);
+      }
+      .finance-overview-card:nth-child(3):hover .finance-overview-card-icon {
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.95),
+          0 7px 15px rgba(121, 85, 199, 0.11);
+      }
+      .finance-overview-card:nth-child(4):hover .finance-overview-card-icon {
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.95),
+          0 7px 15px rgba(196, 123, 23, 0.11);
+      }
+    </style>
   </head>
   <body>
     <div class="dashboard-wrapper">
@@ -26,9 +903,11 @@
         <section class="finance-content-grid">
           <div class="transactions-card">
             <div class="card-header">
-              <div class="card-heading">
-                <h2>Recent Transactions</h2>
-                <p>View and manage recent patient payments.</p>
+              <div class="card-header-left">
+                <div class="card-heading">
+                  <h2>Recent Transactions</h2>
+                  <p>View and manage recent patient payments.</p>
+                </div>
               </div>
               <div class="transactions-header-actions">
                 <span class="transaction-count" id="transactionCount"
@@ -39,26 +918,24 @@
                   id="exportCsvBtn"
                   type="button"
                 >
-                  <i data-lucide="download"></i>
-                  <span>Export CSV</span>
+                  <i data-lucide="download"></i><span>Export CSV</span>
                 </button>
                 <button
                   class="collection-header-button"
                   id="openCollectionDrawerBtn"
                   type="button"
                 >
-                  <span class="collection-button-text">Collections</span>
-                  <span class="collection-button-arrow">
-                    <i data-lucide="chevron-right"></i>
-                  </span>
+                  <span class="collection-button-text">Collections</span
+                  ><span class="collection-button-arrow"
+                    ><i data-lucide="chevron-right"></i
+                  ></span>
                 </button>
                 <button
                   class="primary-button record-payment-header-button"
                   id="recordPaymentBtn"
                   type="button"
                 >
-                  <i data-lucide="plus"></i>
-                  <span>Record Payment</span>
+                  <i data-lucide="plus"></i><span>Record Payment</span>
                 </button>
               </div>
             </div>
@@ -68,8 +945,7 @@
                   <div class="finance-overview-card-content">
                     <span class="finance-overview-card-label"
                       >Today's Collection</span
-                    >
-                    <strong
+                    ><strong
                       class="finance-overview-card-value"
                       id="overviewTodayCollection"
                       >₱0.00</strong
@@ -83,8 +959,7 @@
                   <div class="finance-overview-card-content">
                     <span class="finance-overview-card-label"
                       >Today's Transactions</span
-                    >
-                    <strong
+                    ><strong
                       class="finance-overview-card-value"
                       id="overviewTodayTransactions"
                       >0</strong
@@ -96,8 +971,8 @@
                 </div>
                 <div class="finance-overview-card">
                   <div class="finance-overview-card-content">
-                    <span class="finance-overview-card-label">This Month</span>
-                    <strong
+                    <span class="finance-overview-card-label">This Month</span
+                    ><strong
                       class="finance-overview-card-value"
                       id="overviewMonthlyCollection"
                       >₱0.00</strong
@@ -111,8 +986,7 @@
                   <div class="finance-overview-card-content">
                     <span class="finance-overview-card-label"
                       >Outstanding Balance</span
-                    >
-                    <strong
+                    ><strong
                       class="finance-overview-card-value"
                       id="overviewOutstandingBalance"
                       >₱0.00</strong
@@ -126,8 +1000,8 @@
             </section>
             <div class="filters">
               <div class="search-box">
-                <i data-lucide="search"></i>
-                <input
+                <i data-lucide="search"></i
+                ><input
                   type="text"
                   id="searchInput"
                   placeholder="Search patient or transaction..."
@@ -139,10 +1013,10 @@
                 <option value="Cash">Cash</option>
                 <option value="GCash">GCash</option>
                 <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Card">Card</option>
               </select>
               <select id="statusFilter">
                 <option value="all">All Status</option>
+                <option value="unpaid">Unpaid</option>
                 <option value="partial">Partial</option>
                 <option value="paid">Paid</option>
               </select>
@@ -166,9 +1040,7 @@
                 <tbody id="transactionsTableBody"></tbody>
               </table>
               <div class="empty-state" id="emptyState">
-                <div class="empty-icon">
-                  <i data-lucide="receipt"></i>
-                </div>
+                <div class="empty-icon"><i data-lucide="receipt"></i></div>
                 <h3>No transactions found</h3>
                 <p>Payment transactions will appear here.</p>
               </div>
@@ -226,23 +1098,21 @@
                 class="collection-page-button"
                 id="showCustomCollectionBtnToday"
               >
-                Custom
-                <i data-lucide="calendar-search"></i>
+                Custom <i data-lucide="calendar-search"></i>
               </button>
               <button
                 type="button"
                 class="collection-page-button"
                 id="showMonthlyCollectionBtn"
               >
-                This Month
-                <i data-lucide="chevron-right"></i>
+                This Month <i data-lucide="chevron-right"></i>
               </button>
             </div>
           </div>
           <div class="collection-total-card">
             <div>
-              <span>Total Collected</span>
-              <strong id="todayPaymentMethodTotal">₱0.00</strong>
+              <span>Total Collected</span
+              ><strong id="todayPaymentMethodTotal">₱0.00</strong>
             </div>
             <div class="collection-total-icon">
               <i data-lucide="wallet"></i>
@@ -261,8 +1131,8 @@
                   <i data-lucide="banknote"></i>
                 </div>
                 <div>
-                  <strong>Cash</strong>
-                  <span id="todayCashCount">0 transactions</span>
+                  <strong>Cash</strong
+                  ><span id="todayCashCount">0 transactions</span>
                 </div>
               </div>
               <strong id="todayCashAmount">₱0.00</strong>
@@ -273,8 +1143,8 @@
                   <i data-lucide="smartphone"></i>
                 </div>
                 <div>
-                  <strong>GCash</strong>
-                  <span id="todayGcashCount">0 transactions</span>
+                  <strong>GCash</strong
+                  ><span id="todayGcashCount">0 transactions</span>
                 </div>
               </div>
               <strong id="todayGcashAmount">₱0.00</strong>
@@ -285,23 +1155,11 @@
                   <i data-lucide="building-2"></i>
                 </div>
                 <div>
-                  <strong>Bank Transfer</strong>
-                  <span id="todayBankCount">0 transactions</span>
+                  <strong>Bank Transfer</strong
+                  ><span id="todayBankCount">0 transactions</span>
                 </div>
               </div>
               <strong id="todayBankAmount">₱0.00</strong>
-            </div>
-            <div class="payment-method-item">
-              <div class="method-left">
-                <div class="method-icon card">
-                  <i data-lucide="credit-card"></i>
-                </div>
-                <div>
-                  <strong>Card</strong>
-                  <span id="todayCardCount">0 transactions</span>
-                </div>
-              </div>
-              <strong id="todayCardAmount">₱0.00</strong>
             </div>
           </div>
         </div>
@@ -326,23 +1184,21 @@
                 class="collection-page-button"
                 id="showTodayCollectionBtn"
               >
-                <i data-lucide="chevron-left"></i>
-                Today
+                <i data-lucide="chevron-left"></i> Today
               </button>
               <button
                 type="button"
                 class="collection-page-button"
                 id="showCustomCollectionBtnMonthly"
               >
-                Custom
-                <i data-lucide="calendar-search"></i>
+                Custom <i data-lucide="calendar-search"></i>
               </button>
             </div>
           </div>
           <div class="collection-total-card">
             <div>
-              <span>Total Collected</span>
-              <strong id="monthlyPaymentMethodTotal">₱0.00</strong>
+              <span>Total Collected</span
+              ><strong id="monthlyPaymentMethodTotal">₱0.00</strong>
             </div>
             <div class="collection-total-icon">
               <i data-lucide="wallet"></i>
@@ -361,8 +1217,8 @@
                   <i data-lucide="banknote"></i>
                 </div>
                 <div>
-                  <strong>Cash</strong>
-                  <span id="monthlyCashCount">0 transactions</span>
+                  <strong>Cash</strong
+                  ><span id="monthlyCashCount">0 transactions</span>
                 </div>
               </div>
               <strong id="monthlyCashAmount">₱0.00</strong>
@@ -373,8 +1229,8 @@
                   <i data-lucide="smartphone"></i>
                 </div>
                 <div>
-                  <strong>GCash</strong>
-                  <span id="monthlyGcashCount">0 transactions</span>
+                  <strong>GCash</strong
+                  ><span id="monthlyGcashCount">0 transactions</span>
                 </div>
               </div>
               <strong id="monthlyGcashAmount">₱0.00</strong>
@@ -385,23 +1241,11 @@
                   <i data-lucide="building-2"></i>
                 </div>
                 <div>
-                  <strong>Bank Transfer</strong>
-                  <span id="monthlyBankCount">0 transactions</span>
+                  <strong>Bank Transfer</strong
+                  ><span id="monthlyBankCount">0 transactions</span>
                 </div>
               </div>
               <strong id="monthlyBankAmount">₱0.00</strong>
-            </div>
-            <div class="payment-method-item">
-              <div class="method-left">
-                <div class="method-icon card">
-                  <i data-lucide="credit-card"></i>
-                </div>
-                <div>
-                  <strong>Card</strong>
-                  <span id="monthlyCardCount">0 transactions</span>
-                </div>
-              </div>
-              <strong id="monthlyCardAmount">₱0.00</strong>
             </div>
           </div>
         </div>
@@ -426,27 +1270,25 @@
                 class="collection-page-button"
                 id="backToTodayFromCustomBtn"
               >
-                <i data-lucide="chevron-left"></i>
-                Today
+                <i data-lucide="chevron-left"></i> Today
               </button>
               <button
                 type="button"
                 class="collection-page-button"
                 id="backToMonthlyFromCustomBtn"
               >
-                This Month
-                <i data-lucide="chevron-right"></i>
+                This Month <i data-lucide="chevron-right"></i>
               </button>
             </div>
           </div>
           <div class="custom-range-inputs">
             <div class="custom-range-field">
-              <label for="customDateFrom">From</label>
-              <input type="date" id="customDateFrom" />
+              <label for="customDateFrom">From</label
+              ><input type="date" id="customDateFrom" />
             </div>
             <div class="custom-range-field">
-              <label for="customDateTo">To</label>
-              <input type="date" id="customDateTo" />
+              <label for="customDateTo">To</label
+              ><input type="date" id="customDateTo" />
             </div>
             <button
               type="button"
@@ -458,8 +1300,8 @@
           </div>
           <div class="collection-total-card">
             <div>
-              <span>Total Collected</span>
-              <strong id="customPaymentMethodTotal">₱0.00</strong>
+              <span>Total Collected</span
+              ><strong id="customPaymentMethodTotal">₱0.00</strong>
             </div>
             <div class="collection-total-icon">
               <i data-lucide="wallet"></i>
@@ -478,8 +1320,8 @@
                   <i data-lucide="banknote"></i>
                 </div>
                 <div>
-                  <strong>Cash</strong>
-                  <span id="customCashCount">0 transactions</span>
+                  <strong>Cash</strong
+                  ><span id="customCashCount">0 transactions</span>
                 </div>
               </div>
               <strong id="customCashAmount">₱0.00</strong>
@@ -490,8 +1332,8 @@
                   <i data-lucide="smartphone"></i>
                 </div>
                 <div>
-                  <strong>GCash</strong>
-                  <span id="customGcashCount">0 transactions</span>
+                  <strong>GCash</strong
+                  ><span id="customGcashCount">0 transactions</span>
                 </div>
               </div>
               <strong id="customGcashAmount">₱0.00</strong>
@@ -502,199 +1344,321 @@
                   <i data-lucide="building-2"></i>
                 </div>
                 <div>
-                  <strong>Bank Transfer</strong>
-                  <span id="customBankCount">0 transactions</span>
+                  <strong>Bank Transfer</strong
+                  ><span id="customBankCount">0 transactions</span>
                 </div>
               </div>
               <strong id="customBankAmount">₱0.00</strong>
-            </div>
-            <div class="payment-method-item">
-              <div class="method-left">
-                <div class="method-icon card">
-                  <i data-lucide="credit-card"></i>
-                </div>
-                <div>
-                  <strong>Card</strong>
-                  <span id="customCardCount">0 transactions</span>
-                </div>
-              </div>
-              <strong id="customCardAmount">₱0.00</strong>
             </div>
           </div>
         </div>
       </div>
     </aside>
+    <!-- REPLACE the whole block: <div class="modal-overlay" id="paymentModal"> ... </div>
+     (the one that ends right before <div class="payment-verification-overlay" ...>) -->
     <div class="modal-overlay" id="paymentModal">
       <div class="payment-modal">
         <div class="modal-header">
           <div>
-            <span class="modal-label">FINANCE</span>
+            <span class="modal-label" id="paymentStepLabel"
+              >FINANCE · STEP 1 OF 2</span
+            >
             <h2 id="modalTitle">Record Payment</h2>
           </div>
           <button type="button" class="close-button" id="closeModalBtn">
             <i data-lucide="x"></i>
           </button>
         </div>
-        <div class="appointment-payment-info" id="appointmentPaymentInfo">
-          <div class="appointment-info-grid">
-            <div class="appointment-info-item">
-              <span class="appointment-info-title">Patient</span>
-              <strong id="appointmentInfoPatient">-</strong>
-              <span class="appointment-info-sub" id="appointmentInfoPatientId"
-                >-</span
-              >
-            </div>
-            <div class="appointment-info-item">
-              <span class="appointment-info-title">Service</span>
-              <strong id="appointmentInfoService">-</strong>
-            </div>
-            <div class="appointment-info-item">
-              <span class="appointment-info-title">Appointment</span>
-              <strong id="appointmentInfoDate">-</strong>
-            </div>
-            <div class="appointment-info-item">
-              <span class="appointment-info-title">Dentist</span>
-              <strong id="appointmentInfoDentist">-</strong>
-            </div>
-          </div>
-        </div>
-        <form id="paymentForm">
+
+        <form id="paymentForm" novalidate>
           <input type="hidden" id="transactionId" />
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="patientName">Patient Name <span>*</span></label>
-              <div class="patient-select-wrapper" id="patientSelectWrapper">
-                <input
-                  type="text"
-                  id="patientName"
-                  class="form-control patient-select-input"
-                  placeholder="Type patient name or patient ID"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-expanded="false"
-                />
-                <i class="fa-solid fa-chevron-down patient-select-arrow"></i>
-                <div
-                  class="patient-dropdown"
-                  id="patientDropdown"
-                  role="listbox"
-                ></div>
+          <input type="hidden" id="paymentStatus" value="Unpaid" />
+
+          <!-- ===================== STEP 1 : DISCOUNT ===================== -->
+          <div class="payment-step" id="paymentStep1">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="patientName">Patient Name <span>*</span></label>
+                <div class="patient-select-wrapper" id="patientSelectWrapper">
+                  <input
+                    type="text"
+                    id="patientName"
+                    class="form-control patient-select-input"
+                    placeholder="Type patient name or patient ID"
+                    autocomplete="off"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                  />
+                  <i class="fa-solid fa-chevron-down patient-select-arrow"></i>
+                  <div
+                    class="patient-dropdown"
+                    id="patientDropdown"
+                    role="listbox"
+                  ></div>
+                </div>
+                <small class="field-help"
+                  >Only patients already registered in the Patients page can be
+                  selected.</small
+                >
               </div>
-              <small class="field-help"
-                >Only patients already registered in the Patients page can be
-                selected.</small
+
+              <div class="form-group">
+                <label for="serviceName">Service <span>*</span></label>
+                <div class="service-select-wrapper" id="serviceSelectWrapper">
+                  <input
+                    type="text"
+                    id="serviceName"
+                    class="service-select-input"
+                    placeholder="e.g. Dental Cleaning"
+                    autocomplete="off"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    required
+                  />
+                  <i class="fa-solid fa-chevron-down service-select-arrow"></i>
+                  <div
+                    class="service-dropdown"
+                    id="serviceDropdown"
+                    role="listbox"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="paymentDate">Payment Date <span>*</span></label>
+                <input type="date" id="paymentDate" required />
+              </div>
+
+              <div class="form-group">
+                <label for="paymentTotal">Total Amount <span>*</span></label>
+                <div class="amount-input">
+                  <span>₱</span>
+                  <input
+                    type="number"
+                    id="paymentTotal"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="discountType">Discount Type <span>*</span></label>
+                <select id="discountType">
+                  <option value="none">No Discount</option>
+                  <option value="senior">Senior Citizen</option>
+                  <option value="pwd">PWD</option>
+                  <option value="promo">Clinic Promotional</option>
+                  <option value="other">Other Authorized</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="discountRate">Discount Rate</label>
+                <div class="amount-input">
+                  <input
+                    type="number"
+                    id="discountRate"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value="0"
+                    placeholder="0.00"
+                    disabled
+                  />
+                  <span class="rate-suffix">%</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="paymentDiscount">Discount Amount</label>
+                <div class="amount-input calculated-input">
+                  <span>₱</span>
+                  <input
+                    type="text"
+                    id="paymentDiscount"
+                    value="0.00"
+                    readonly
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="paymentNet">Net Amount</label>
+                <div class="amount-input calculated-input">
+                  <span>₱</span>
+                  <input type="text" id="paymentNet" value="0.00" readonly />
+                </div>
+              </div>
+
+              <small
+                class="field-help payment-status-hidden"
+                id="discountLockedNote"
+                style="grid-column: 1 / -1"
               >
-            </div>
-            <div class="form-group">
-              <label for="serviceName">Service <span>*</span></label>
-              <div class="service-select-wrapper" id="serviceSelectWrapper">
-                <input
-                  type="text"
-                  id="serviceName"
-                  class="service-select-input"
-                  placeholder="e.g. Dental Cleaning"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-expanded="false"
-                  required
-                />
-                <i class="fa-solid fa-chevron-down service-select-arrow"></i>
-                <div
-                  class="service-dropdown"
-                  id="serviceDropdown"
-                  role="listbox"
-                ></div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="paymentDate">Payment Date <span>*</span></label>
-              <input type="date" id="paymentDate" required />
-            </div>
-            <div class="form-group">
-              <label for="paymentTotal">Total Amount <span>*</span></label>
-              <div class="amount-input">
-                <span>₱</span>
-                <input
-                  type="number"
-                  id="paymentTotal"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="paymentDiscount">Discount</label>
-              <div class="amount-input">
-                <span>₱</span>
-                <input
-                  type="number"
-                  id="paymentDiscount"
-                  min="0"
-                  step="0.01"
-                  value="0"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="paymentMethod">Payment Method <span>*</span></label>
-              <select id="paymentMethod" required>
-                <option value="">Select method</option>
-                <option value="Cash">Cash</option>
-                <option value="GCash">GCash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Card">Card</option>
-              </select>
-            </div>
-            <div
-              class="form-group full-width-process"
-              id="paymentProcessWrapper"
-              style="display: none"
-            >
-              <div class="payment-process-box" id="paymentProcessBox"></div>
-            </div>
-            <div class="form-group">
-              <label for="paymentPaid">Amount Paid <span>*</span></label>
-              <div class="amount-input calculated-payment-input">
-                <span>₱</span>
-                <input
-                  type="number"
-                  id="paymentPaid"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  readonly
-                  required
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="paymentBalance">Balance</label>
-              <div class="amount-input calculated-input">
-                <span>₱</span>
-                <input type="text" id="paymentBalance" value="0.00" readonly />
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="paymentStatus">Payment Status</label>
-              <select id="paymentStatus" disabled>
-                <option value="Paid">Paid</option>
-                <option value="Partial">Partial</option>
-                <option value="Unpaid">Unpaid</option>
-              </select>
-            </div>
-            <div class="form-group notes-form-group">
-              <label for="paymentNotes">Notes</label>
-              <textarea
-                id="paymentNotes"
-                rows="1"
-                placeholder="Optional payment notes..."
-              ></textarea>
+                The discount was already applied to this transaction and cannot
+                be changed or applied again.
+              </small>
             </div>
           </div>
-          <div class="modal-actions">
+
+          <!-- ===================== STEP 2 : PAYMENT ===================== -->
+          <div class="payment-step payment-status-hidden" id="paymentStep2">
+            <div class="payment-summary">
+              <span class="payment-summary-title">Payment Summary</span>
+              <div class="payment-summary-grid">
+                <div>
+                  <span>Patient Name</span><strong id="sumPatient">-</strong>
+                </div>
+                <div>
+                  <span>Service</span><strong id="sumService">-</strong>
+                </div>
+                <div>
+                  <span>Total Amount</span><strong id="sumTotal">₱0.00</strong>
+                </div>
+                <div>
+                  <span>Discount</span><strong id="sumDiscount">₱0.00</strong>
+                </div>
+                <div>
+                  <span>Net Amount</span><strong id="sumNet">₱0.00</strong>
+                </div>
+                <div>
+                  <span>Balance</span><strong id="sumBalance">₱0.00</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group payment-method-form-group">
+                <label class="payment-method-selector-label" for="paymentMethod"
+                  >Payment Method <span>*</span></label
+                >
+                <select
+                  id="paymentMethod"
+                  class="payment-method-native-select"
+                  required
+                  aria-hidden="true"
+                  tabindex="-1"
+                >
+                  <option value="">Select method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="GCash">GCash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                </select>
+                <div
+                  class="payment-method-options"
+                  role="group"
+                  aria-label="Payment Method"
+                >
+                  <button
+                    type="button"
+                    class="payment-method-option cash-option"
+                    data-payment-method="Cash"
+                    aria-pressed="false"
+                  >
+                    <span class="payment-method-option-icon"
+                      ><i class="fa-solid fa-money-bill-wave"></i
+                    ></span>
+                    <strong>Cash</strong><small>Pay at clinic</small>
+                    <span class="payment-method-option-check"
+                      ><i class="fa-solid fa-check"></i
+                    ></span>
+                  </button>
+                  <button
+                    type="button"
+                    class="payment-method-option gcash-option"
+                    data-payment-method="GCash"
+                    aria-pressed="false"
+                  >
+                    <span class="payment-method-option-icon"
+                      ><i class="fa-solid fa-mobile-screen-button"></i
+                    ></span>
+                    <strong>GCash</strong><small>Digital payment</small>
+                    <span class="payment-method-option-check"
+                      ><i class="fa-solid fa-check"></i
+                    ></span>
+                  </button>
+                  <button
+                    type="button"
+                    class="payment-method-option bank-option"
+                    data-payment-method="Bank Transfer"
+                    aria-pressed="false"
+                  >
+                    <span class="payment-method-option-icon"
+                      ><i class="fa-solid fa-building-columns"></i
+                    ></span>
+                    <strong>Bank Transfer</strong
+                    ><small>Direct bank transfer</small>
+                    <span class="payment-method-option-check"
+                      ><i class="fa-solid fa-check"></i
+                    ></span>
+                  </button>
+                </div>
+              </div>
+
+              <div
+                class="form-group full-width-process"
+                id="paymentProcessWrapper"
+                style="display: none"
+              >
+                <div class="payment-process-box" id="paymentProcessBox"></div>
+              </div>
+
+              <div class="form-group" id="paymentDueGroup">
+                <label for="paymentAmountDue">Amount to Pay</label>
+                <div class="amount-input calculated-input">
+                  <span>₱</span>
+                  <input
+                    type="text"
+                    id="paymentAmountDue"
+                    value="0.00"
+                    readonly
+                  />
+                </div>
+              </div>
+
+              <div class="form-group payment-received-group">
+                <label for="paymentPaid">Amount Received <span>*</span></label>
+                <div class="amount-input">
+                  <span>₱</span>
+                  <input
+                    type="number"
+                    id="paymentPaid"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-group" id="paymentChangeGroup">
+                <label for="paymentChange">Change</label>
+                <div class="amount-input calculated-input">
+                  <span>₱</span>
+                  <input type="text" id="paymentChange" value="0.00" readonly />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="paymentBalance">Balance After Payment</label>
+                <div class="amount-input calculated-input">
+                  <span>₱</span>
+                  <input
+                    type="text"
+                    id="paymentBalance"
+                    value="0.00"
+                    readonly
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================== FOOTERS ===================== -->
+          <div class="modal-actions" id="paymentActionsStep1">
             <button
               type="button"
               class="secondary-button"
@@ -703,13 +1667,31 @@
               Cancel
             </button>
             <button
+              type="button"
+              class="primary-button"
+              id="nextPaymentStepBtn"
+            >
+              <span>Next</span><i data-lucide="arrow-right"></i>
+            </button>
+          </div>
+          <div
+            class="modal-actions payment-status-hidden"
+            id="paymentActionsStep2"
+          >
+            <button
+              type="button"
+              class="secondary-button"
+              id="backPaymentStepBtn"
+            >
+              <i data-lucide="arrow-left"></i><span>Back</span>
+            </button>
+            <button
               type="submit"
               class="primary-button"
               id="savePaymentBtn"
               disabled
             >
-              <i data-lucide="check"></i>
-              Save Payment
+              <i data-lucide="check"></i>Save Payment
             </button>
           </div>
         </form>
@@ -749,50 +1731,30 @@
         </div>
         <div class="details-content">
           <div class="transaction-reference">
-            <span>Transaction ID</span>
-            <strong id="detailTransactionId">-</strong>
+            <span>Transaction ID</span
+            ><strong id="detailTransactionId">-</strong>
           </div>
           <div class="details-grid">
+            <div><span>Patient</span><strong id="detailPatient">-</strong></div>
             <div>
-              <span>Patient</span>
-              <strong id="detailPatient">-</strong>
+              <span>Patient ID</span><strong id="detailPatientId">-</strong>
+            </div>
+            <div><span>Service</span><strong id="detailService">-</strong></div>
+            <div><span>Total</span><strong id="detailTotal">₱0.00</strong></div>
+            <div>
+              <span>Discount</span><strong id="detailDiscount">₱0.00</strong>
+            </div>
+            <div><span>Paid</span><strong id="detailPaid">₱0.00</strong></div>
+            <div>
+              <span>Balance</span><strong id="detailBalance">₱0.00</strong>
             </div>
             <div>
-              <span>Service</span>
-              <strong id="detailService">-</strong>
+              <span>Payment Method(s)</span><strong id="detailMethod">-</strong>
             </div>
-            <div>
-              <span>Total</span>
-              <strong id="detailTotal">₱0.00</strong>
-            </div>
-            <div>
-              <span>Discount</span>
-              <strong id="detailDiscount">₱0.00</strong>
-            </div>
-            <div>
-              <span>Paid</span>
-              <strong id="detailPaid">₱0.00</strong>
-            </div>
-            <div>
-              <span>Balance</span>
-              <strong id="detailBalance">₱0.00</strong>
-            </div>
-            <div>
-              <span>Payment Method(s)</span>
-              <strong id="detailMethod">-</strong>
-            </div>
-            <div>
-              <span>Date</span>
-              <strong id="detailDate">-</strong>
-            </div>
+            <div><span>Date</span><strong id="detailDate">-</strong></div>
             <div class="detail-status-item">
-              <span>Status</span>
-              <strong id="detailStatus">-</strong>
+              <span>Status</span><strong id="detailStatus">-</strong>
             </div>
-          </div>
-          <div class="details-note">
-            <span>Notes</span>
-            <p id="detailNotes">No notes.</p>
           </div>
           <div class="payment-history-section">
             <div class="payment-history-header">
@@ -831,7 +1793,141 @@
       </div>
     </div>
     <script src="../../navigation_bar/sidebar.js"></script>
-    <script src="finance.js"></script>
+    <script src="../../shared/receipt/receipt.js"></script>
+    <script src="finance.js?v=20261007"></script>
     <script src="../profile/profile.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const paymentMethodInput = document.getElementById("paymentMethod");
+        const paymentMethodOptions = document.querySelectorAll(
+          ".payment-method-option",
+        );
+        function syncPaymentMethodCards() {
+          const selectedMethod = paymentMethodInput
+            ? paymentMethodInput.value
+            : "";
+          paymentMethodOptions.forEach(function (option) {
+            const isSelected = option.dataset.paymentMethod === selectedMethod;
+            option.classList.toggle("is-selected", isSelected);
+            option.setAttribute("aria-pressed", isSelected ? "true" : "false");
+          });
+        }
+        paymentMethodOptions.forEach(function (option) {
+          option.addEventListener("click", function () {
+            const method = option.dataset.paymentMethod || "";
+            if (!paymentMethodInput) {
+              return;
+            }
+            paymentMethodInput.value = method;
+            paymentMethodInput.dispatchEvent(
+              new Event("change", { bubbles: true }),
+            );
+            syncPaymentMethodCards();
+          });
+        });
+        if (paymentMethodInput) {
+          paymentMethodInput.addEventListener("change", syncPaymentMethodCards);
+        }
+        const paymentModal = document.getElementById("paymentModal");
+        if (paymentModal) {
+          const observer = new MutationObserver(function () {
+            syncPaymentMethodCards();
+          });
+          observer.observe(paymentModal, {
+            attributes: true,
+            attributeFilter: ["class"],
+          });
+        }
+        syncPaymentMethodCards();
+        const tableBody = document.getElementById("transactionsTableBody");
+        const historyList = document.getElementById("paymentHistoryList");
+        function getPatientInitials(name) {
+          const value = String(name || "").trim();
+          if (!value) {
+            return "P";
+          }
+          const parts = value.split(/\s+/).filter(Boolean);
+          if (parts.length === 1) {
+            return parts[0].substring(0, 2).toUpperCase();
+          }
+          return (
+            parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+          ).toUpperCase();
+        }
+        function enhancePatientCells() {
+          if (!tableBody) {
+            return;
+          }
+          tableBody.querySelectorAll(".patient-cell").forEach(function (cell) {
+            if (cell.querySelector(".patient-initials")) {
+              return;
+            }
+            const nameElement = cell.querySelector("strong");
+            const idElement = cell.querySelector("span");
+            if (!nameElement) {
+              return;
+            }
+            const name = nameElement.textContent.trim();
+            const patientId = idElement ? idElement.textContent.trim() : "";
+            const initials = document.createElement("span");
+            initials.className = "patient-initials";
+            initials.textContent = getPatientInitials(name);
+            initials.setAttribute("aria-hidden", "true");
+            const info = document.createElement("div");
+            info.className = "patient-cell-info";
+            nameElement.parentNode.insertBefore(info, nameElement);
+            info.appendChild(nameElement);
+            if (idElement) {
+              info.appendChild(idElement);
+            }
+            cell.insertBefore(initials, info);
+          });
+        }
+        function enhancePaymentHistory() {
+          if (!historyList) {
+            return;
+          }
+          historyList
+            .querySelectorAll(".payment-history-item")
+            .forEach(function (item) {
+              item.classList.remove(
+                "cash-history",
+                "gcash-history",
+                "bank-history",
+              );
+              const methodElement = item.querySelector(
+                ".payment-history-item-info strong",
+              );
+              const method = methodElement
+                ? methodElement.textContent.trim().toLowerCase()
+                : "";
+              if (method === "gcash") {
+                item.classList.add("gcash-history");
+              } else if (method === "bank transfer") {
+                item.classList.add("bank-history");
+              } else {
+                item.classList.add("cash-history");
+              }
+            });
+        }
+        if (tableBody) {
+          const tableObserver = new MutationObserver(function () {
+            enhancePatientCells();
+          });
+          tableObserver.observe(tableBody, { childList: true, subtree: true });
+          enhancePatientCells();
+        }
+        if (historyList) {
+          const historyObserver = new MutationObserver(function () {
+            enhancePaymentHistory();
+          });
+          historyObserver.observe(historyList, {
+            childList: true,
+            subtree: true,
+          });
+          enhancePaymentHistory();
+        }
+      });
+    </script>
   </body>
 </html>

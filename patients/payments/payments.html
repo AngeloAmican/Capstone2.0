@@ -23,12 +23,14 @@
       <main class="payments-main">
         <div class="payments-content">
           <header class="payments-page-header">
-            <div class="payments-heading">
-              <h1>Payments</h1>
-              <p>
-                View your treatment charges, payment history, and remaining
-                balance.
-              </p>
+            <div class="page-title-row">
+              <div class="payments-heading">
+                <h1>Payments</h1>
+                <p>
+                  View your treatment charges, payment history, and remaining
+                  balance.
+                </p>
+              </div>
             </div>
           </header>
           <section class="payment-summary-grid">
@@ -146,43 +148,6 @@
         <div class="payment-modal-body" id="paymentModalBody"></div>
       </div>
     </div>
-    <div class="receipt-modal" id="receiptModal" hidden>
-      <div class="receipt-modal-overlay" id="receiptModalOverlay"></div>
-      <div class="receipt-modal-dialog">
-        <div class="receipt-modal-header">
-          <div>
-            <span class="section-eyebrow">PAYMENT RECEIPT</span>
-            <h2>Official Payment Receipt</h2>
-          </div>
-          <button
-            type="button"
-            class="receipt-modal-close"
-            id="receiptModalClose"
-            aria-label="Close"
-          >
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-        <div class="receipt-modal-body" id="receiptModalBody"></div>
-        <div class="receipt-modal-actions">
-          <button
-            type="button"
-            class="receipt-secondary-button"
-            id="receiptCloseButton"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            class="receipt-primary-button"
-            id="printReceiptButton"
-          >
-            <i class="fa-solid fa-print"></i>
-            Print Receipt
-          </button>
-        </div>
-      </div>
-    </div>
     <div class="patient-pay-modal" id="patientPayModal" hidden>
       <div class="patient-pay-overlay" id="patientPayOverlay"></div>
       <div class="patient-pay-dialog">
@@ -236,28 +201,59 @@
               <small id="patientPayAmountHint"></small>
             </div>
             <div class="patient-pay-field">
-              <label for="patientPayMethod">Payment Method</label>
-              <select id="patientPayMethod" required>
+              <label>Payment Method</label>
+              <select
+                id="patientPayMethod"
+                class="patient-payment-method-select"
+                aria-hidden="true"
+                tabindex="-1"
+              >
                 <option value="">Select method</option>
-                <option value="Cash">Cash</option>
                 <option value="GCash">GCash</option>
                 <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Card">Card</option>
               </select>
+              <div
+                class="patient-payment-method-options"
+                role="group"
+                aria-label="Payment Method"
+              >
+                <button
+                  type="button"
+                  class="patient-payment-method-option gcash-option"
+                  data-payment-method="GCash"
+                  aria-pressed="false"
+                >
+                  <span class="patient-payment-method-icon">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                  </span>
+                  <strong>GCash</strong>
+                  <small>Digital wallet</small>
+                  <span class="patient-payment-method-check" aria-hidden="true">
+                    <i class="fa-solid fa-check"></i>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="patient-payment-method-option bank-option"
+                  data-payment-method="Bank Transfer"
+                  aria-pressed="false"
+                >
+                  <span class="patient-payment-method-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                  </span>
+                  <strong>Bank Transfer</strong>
+                  <small>Direct bank transfer</small>
+                  <span class="patient-payment-method-check" aria-hidden="true">
+                    <i class="fa-solid fa-check"></i>
+                  </span>
+                </button>
+              </div>
             </div>
             <div
               class="patient-pay-process"
               id="patientPayProcess"
               hidden
             ></div>
-            <div class="patient-pay-field">
-              <label for="patientPayNotes">Notes</label>
-              <textarea
-                id="patientPayNotes"
-                rows="2"
-                placeholder="Optional payment notes..."
-              ></textarea>
-            </div>
             <div class="patient-pay-actions">
               <button
                 type="button"
@@ -272,39 +268,16 @@
                 id="patientPaySubmit"
                 disabled
               >
-                <i class="fa-solid fa-check"></i>
-                Confirm Payment
+                <i class="fa-solid fa-arrow-right"></i>
+                Continue to Payment
               </button>
             </div>
           </form>
         </div>
       </div>
     </div>
-    <div
-      class="patient-payment-verification-modal"
-      id="patientPaymentVerificationModal"
-      hidden
-    >
-      <div
-        class="patient-payment-verification-overlay"
-        id="patientPaymentVerificationOverlay"
-      ></div>
-      <div class="patient-payment-verification-dialog">
-        <button
-          type="button"
-          class="patient-payment-verification-close"
-          id="patientPaymentVerificationClose"
-          aria-label="Close payment verification"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-        <div
-          class="patient-payment-verification-box"
-          id="patientPaymentVerificationBox"
-        ></div>
-      </div>
-    </div>
     <script src="../navigation_bar/sidebar.js"></script>
+    <script src="../../shared/receipt/receipt.js"></script>
     <script src="payments.js"></script>
   </body>
 </html>
